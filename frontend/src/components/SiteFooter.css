@@ -1,0 +1,123 @@
+.site-footer {
+  background: var(--bg-root);
+  color: var(--text-secondary);
+  padding: 80px 40px 40px;
+}
+
+.site-footer__top {
+  display: grid;
+  grid-template-columns: 1.8fr 1fr 1fr 1fr;
+  gap: 32px;
+  padding-bottom: 40px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.site-footer__brand-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 12px;
+}
+
+.site-footer__brand-tagline {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin: 0;
+  max-width: 280px;
+}
+
+.site-footer__col-heading {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 20px;
+}
+
+.site-footer__col {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.site-footer__col a {
+  font-size: 14px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.site-footer__col a:hover {
+  color: var(--color-primary);
+}
+
+.site-footer__link-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  transition: color 0.2s ease;
+}
+
+.site-footer__link-btn:hover {
+  color: var(--color-primary);
+}
+
+.site-footer__link-btn.is-copied {
+  color: var(--color-success);
+}
+
+.site-footer__link-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.site-footer__socials {
+  display: flex;
+  gap: 12px;
+}
+
+.site-footer__socials a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+  border: 1px solid var(--border-subtle);
+}
+
+.site-footer__socials a:hover {
+  background: var(--color-primary);
+  color: var(--btn-primary-text);
+  border-color: var(--color-primary);
+}
+
+.site-footer__bottom {
+  padding-top: 24px;
+  font-size: 13px;
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+.site-footer__link-btn:focus-visible,
+.site-footer__col a:focus-visible,
+.site-footer__socials a:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+@media (max-width: 900px) {
+  .site-footer__top {
+    grid-template-columns: 1fr 1fr;
+  }
+}

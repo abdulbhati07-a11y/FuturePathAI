@@ -1,0 +1,145 @@
+.dashboard-page {
+  display: flex;
+  padding: 28px 32px;
+  gap: 24px;
+  min-height: 100%;
+}
+
+.dashboard-page__main {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Error banner ─────────────────────────────────────────── */
+.dashboard-page__error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 12px;
+  padding: 16px 20px;
+  color: var(--color-danger);
+  font-size: 13.5px;
+  margin-bottom: 24px;
+}
+
+.dashboard-page__error-banner p { margin: 0; }
+
+.dashboard-page__error-banner button {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 7px;
+  color: var(--color-danger);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  transition: background-color 0.15s;
+}
+
+.dashboard-page__error-banner button:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+/* ── Loading Skeletons ────────────────────────────────────── */
+.dashboard-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.dashboard-skeleton > * {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+}
+
+.dashboard-skeleton > *::after,
+.dashboard-skeleton__stat-card::after,
+.dashboard-skeleton__sim-row::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--color-primary) 5%, transparent),
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 2s infinite linear;
+}
+
+.dashboard-skeleton__header {
+  height: 64px;
+  border-radius: 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+}
+
+.dashboard-skeleton__stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.dashboard-skeleton__stat-card {
+  height: 110px;
+  border-radius: 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-skeleton__sims {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dashboard-skeleton__sim-row {
+  height: 72px;
+  border-radius: 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  position: relative;
+  overflow: hidden;
+}
+
+@media (max-width: 1100px) {
+  .dashboard-skeleton__stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-page {
+    flex-direction: column;
+    padding: 16px;
+    gap: 20px;
+  }
+}
+
+/* ── Onboarding full-width layout ─────────────────────────────────────────── */
+/* When there's no advisor panel the main content takes the full width.        */
+.dashboard-page:has(.onboarding) {
+  /* No advisor panel — main takes all space */
+}
+
+.dashboard-page:has(.onboarding) .dashboard-page__main {
+  max-width: 860px;
+  margin: 0 auto;
+  width: 100%;
+}

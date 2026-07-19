@@ -1,0 +1,81 @@
+// FuturePath AI — Prisma Schema (MySQL / MariaDB via XAMPP)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  roles        Json     @default("[\"USER\"]")
+  profile      Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  simulations   Simulation[]
+  reports       Report[]
+  notifications Notification[]
+
+  @@map("users")
+}
+
+model Simulation {
+  id                 String   @id @default(uuid())
+  userId             String
+  title              String
+  category           String
+  status             String   @default("DRAFT")
+  isPublic           Boolean  @default(false)
+  answers            Json
+  generatedQuestions Json
+  decisionScore      Int?
+  riskScore          Int?
+  confidenceScore    Int?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reports Report[]
+
+  @@map("simulations")
+}
+
+model Report {
+  id              String   @id @default(uuid())
+  simulationId    String   @unique
+  userId          String
+  summary         String   @db.Text
+  chartData       Json
+  timeline        Json
+  scores          Json
+  recommendations Json
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  simulation Simulation @relation(fields: [simulationId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("reports")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String
+  title     String
+  message   String   @db.Text
+  isRead    Boolean  @default(false)
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}

@@ -1,0 +1,55 @@
+.thinking-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  padding: 0 4px;
+}
+
+.thinking-indicator__icon {
+  display: flex;
+  color: var(--color-primary);
+  animation: thinking-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes thinking-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+.save-pause-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 12px;
+  cursor: pointer;
+}
+
+.save-pause-bar:hover:not(:disabled) {
+  color: var(--color-primary);
+}
+
+.save-pause-bar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.save-pause-bar:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thinking-indicator__icon {
+    animation: none;
+  }
+}

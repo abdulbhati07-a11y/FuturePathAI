@@ -1,0 +1,259 @@
+.onboarding {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  animation: fade-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Hero card ────────────────────────────────────────────────────────────── */
+.onboarding__hero {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-primary) 10%, transparent) 0%,
+    color-mix(in srgb, var(--color-success) 6%, transparent) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-primary) 22%, transparent);
+  border-radius: 20px;
+  padding: 44px 40px;
+  text-align: center;
+}
+
+/* Ambient radial glow */
+.onboarding__glow {
+  position: absolute;
+  top: -80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--color-primary) 18%, transparent),
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.onboarding__hero > * { position: relative; z-index: 1; }
+
+/* Badge */
+.onboarding__hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 28%, transparent);
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--color-primary);
+  letter-spacing: 0.03em;
+  margin-bottom: 18px;
+}
+
+/* Title */
+.onboarding__hero-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 12px;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+/* Subtitle */
+.onboarding__hero-sub {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin: 0 auto 28px;
+  max-width: 520px;
+  line-height: 1.65;
+}
+
+/* CTA button */
+.onboarding__hero-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--color-primary);
+  color: var(--btn-primary-text);
+  border: none;
+  border-radius: 12px;
+  padding: 14px 28px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background-color 0.15s, box-shadow 0.15s, transform 0.1s;
+  box-shadow: 0 6px 20px var(--color-primary-glow);
+}
+
+.onboarding__hero-cta:hover {
+  background: var(--color-primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px var(--color-primary-glow);
+}
+
+.onboarding__hero-cta:active { transform: scale(0.98); }
+
+/* ── Feature cards ────────────────────────────────────────────────────────── */
+.onboarding__features {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.onboarding__feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 18px 20px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.onboarding__feature:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: color-mix(in srgb, var(--feat-color, var(--color-primary)) 25%, transparent);
+}
+
+.onboarding__feature-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--feat-color, var(--color-primary)) 12%, transparent);
+  color: var(--feat-color, var(--color-primary));
+}
+
+.onboarding__feature-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 5px;
+}
+
+.onboarding__feature-desc {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── Sample prompts ───────────────────────────────────────────────────────── */
+.onboarding__prompts {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  padding: 22px 24px;
+}
+
+.onboarding__prompts-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  margin: 0 0 14px;
+}
+
+.onboarding__prompts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.onboarding__prompt-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: background-color 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.onboarding__prompt-chip:hover {
+  background: color-mix(in srgb, var(--color-primary) 7%, transparent);
+  border-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
+  color: var(--color-primary);
+  transform: translateX(3px);
+}
+
+.onboarding__prompt-arrow {
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s;
+  color: var(--color-primary);
+}
+
+.onboarding__prompt-chip:hover .onboarding__prompt-arrow { opacity: 1; }
+
+/* ── Social proof ─────────────────────────────────────────────────────────── */
+.onboarding__proof {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  justify-content: center;
+  padding: 6px 0 4px;
+}
+
+.onboarding__proof-avatars {
+  display: flex;
+}
+
+.onboarding__proof-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-surface);
+  margin-left: -8px;
+  display: inline-block;
+  box-shadow: var(--shadow-sm);
+}
+
+.onboarding__proof-dot:first-child { margin-left: 0; }
+
+.onboarding__proof-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.onboarding__proof-text strong { color: var(--text-primary); font-weight: 700; }
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .onboarding__features { grid-template-columns: 1fr; }
+  .onboarding__prompts-grid { grid-template-columns: 1fr; }
+  .onboarding__hero { padding: 32px 20px; }
+  .onboarding__hero-title { font-size: 22px; }
+}
+
+@media (max-width: 600px) {
+  .onboarding__proof { flex-direction: column; gap: 8px; text-align: center; }
+}

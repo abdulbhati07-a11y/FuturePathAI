@@ -1,0 +1,71 @@
+.app-layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg-root);
+  position: relative;
+}
+
+/* ── Content area ─────────────────────────────────────────────────────────── */
+.app-layout__content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.app-layout__page {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Custom scrollbar */
+.app-layout__page::-webkit-scrollbar { width: 6px; }
+.app-layout__page::-webkit-scrollbar-track { background: transparent; }
+.app-layout__page::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 3px;
+}
+.app-layout__page::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }
+
+/* ── Desktop: both sidebars coexist; mobile one is hidden ─────────────────── */
+.app-layout__sidebar--mobile {
+  display: none;   /* hidden on desktop */
+}
+
+/* ── Mobile backdrop ──────────────────────────────────────────────────────── */
+.app-layout__backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, var(--bg-root) 60%, transparent);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  z-index: 199;
+  animation: backdrop-fade-in 0.2s ease both;
+}
+
+@keyframes backdrop-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Mobile breakpoint (≤ 768px) ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Hide the always-visible desktop sidebar */
+  .app-layout__sidebar--desktop {
+    display: none;
+  }
+
+  /* Show the mobile drawer sidebar */
+  .app-layout__sidebar--mobile {
+    display: flex;
+  }
+
+  /* Show backdrop when drawer is open */
+  .app-layout__backdrop {
+    display: block;
+  }
+}

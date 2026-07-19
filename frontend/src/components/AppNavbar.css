@@ -1,0 +1,678 @@
+/* ─── App Navbar ─────────────────────────────────────────────── */
+.app-navbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 60px;
+  padding: 0 28px;
+  background: var(--bg-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border-subtle);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  flex-shrink: 0;
+}
+
+/* ─── Left ───────────────────────────────────────────────────── */
+.app-navbar__left {
+  flex: 1;
+  min-width: 0;
+}
+
+.app-navbar__page-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ─── Center / Search ────────────────────────────────────────── */
+.app-navbar__center {
+  flex: 0 0 auto;
+  position: relative;
+}
+
+.app-navbar__search-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 9px;
+  padding: 7px 14px;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  white-space: nowrap;
+  min-width: 200px;
+}
+
+.app-navbar__search-btn:hover {
+  border-color: var(--color-primary-glow);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 8%, transparent);
+}
+
+.app-navbar__kbd {
+  margin-left: auto;
+  font-size: 10px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  padding: 2px 5px;
+  color: var(--text-tertiary);
+  font-family: inherit;
+}
+
+.app-navbar__search-open {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-surface);
+  border: 1px solid var(--color-primary);
+  border-radius: 9px;
+  padding: 7px 14px;
+  min-width: 320px;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent);
+}
+
+.app-navbar__search-icon {
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.app-navbar__search-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  font-size: 13.5px;
+  color: var(--text-primary);
+  font-family: inherit;
+}
+
+.app-navbar__search-input::placeholder { color: var(--text-tertiary); }
+
+/* ─── Search clear button ────────────────────────────────────── */
+.app-navbar__search-clear {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 3px;
+  border-radius: 4px;
+  transition: color 0.15s;
+  flex-shrink: 0;
+}
+.app-navbar__search-clear:hover { color: var(--text-primary); }
+
+.app-navbar__kbd-esc {
+  font-size: 10px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  padding: 2px 6px;
+  color: var(--text-tertiary);
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* open state with results gets rounded bottom removed */
+.app-navbar__search-open.has-results {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom-color: transparent;
+}
+
+/* spinning animation for loader */
+.spinning { animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── Search results dropdown ────────────────────────────────── */
+.app-navbar__search-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--color-primary);
+  border-top: none;
+  border-bottom-left-radius: 14px;
+  border-bottom-right-radius: 14px;
+  box-shadow: var(--shadow-lg), 0 0 0 1px var(--border-glow);
+  z-index: 300;
+  overflow: hidden;
+  animation: dropdown-in 0.16s cubic-bezier(0.16, 1, 0.3, 1) both;
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+@keyframes dropdown-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Group label ──────────────────────────────────────────────── */
+.app-navbar__search-group {
+  padding: 6px 0 2px;
+}
+
+.app-navbar__search-group + .app-navbar__search-group {
+  border-top: 1px solid var(--border-subtle);
+  margin-top: 4px;
+  padding-top: 8px;
+}
+
+.app-navbar__search-group-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-tertiary);
+  padding: 4px 16px 6px;
+  margin: 0;
+}
+
+/* ── Result row ───────────────────────────────────────────────── */
+.app-navbar__search-result {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: background-color 0.1s;
+}
+
+.app-navbar__search-result:hover,
+.app-navbar__search-result.is-active {
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+}
+
+.app-navbar__search-result-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.app-navbar__search-result-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.app-navbar__search-result-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-navbar__search-result-sub {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.app-navbar__search-result-arrow {
+  color: var(--text-tertiary);
+  opacity: 0;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+
+.app-navbar__search-result:hover .app-navbar__search-result-arrow,
+.app-navbar__search-result.is-active .app-navbar__search-result-arrow {
+  opacity: 1;
+  color: var(--color-primary);
+}
+
+/* ── Highlight match ──────────────────────────────────────────── */
+.app-navbar__search-highlight {
+  background: color-mix(in srgb, var(--color-primary) 20%, transparent);
+  color: var(--color-primary);
+  border-radius: 2px;
+  font-style: normal;
+  font-weight: 700;
+  padding: 0 1px;
+}
+
+/* ── Empty / loading state ────────────────────────────────────── */
+.app-navbar__search-state {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 16px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* ── See all results footer ───────────────────────────────────── */
+.app-navbar__search-all {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 11px 16px;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--border-subtle);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-align: left;
+  transition: background-color 0.15s;
+}
+
+.app-navbar__search-all:hover {
+  background: color-mix(in srgb, var(--color-primary) 6%, transparent);
+}
+
+.app-navbar__search-all strong { font-weight: 700; }
+
+.app-navbar__search-all svg:last-child { margin-left: auto; }
+
+/* ─── Right ──────────────────────────────────────────────────── */
+.app-navbar__right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.app-navbar__new-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--gradient-primary);
+  color: var(--btn-primary-text);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--shadow-sm);
+  white-space: nowrap;
+}
+
+.app-navbar__new-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md), 0 0 12px var(--color-primary-glow);
+}
+
+/* ─── Icon Button ────────────────────────────────────────────── */
+.app-navbar__icon-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.app-navbar__icon-btn:hover {
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--color-primary) 35%, transparent);
+}
+
+.app-navbar__badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 17px;
+  height: 17px;
+  border-radius: 10px;
+  background: var(--color-danger);
+  color: var(--btn-primary-text);
+  font-size: 9.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 2px solid var(--bg-root);
+  line-height: 1;
+}
+
+/* ─── Profile Button ─────────────────────────────────────────── */
+.app-navbar__profile-wrap,
+.app-navbar__notif-wrap {
+  position: relative;
+}
+
+.app-navbar__profile-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 6px 10px 6px 6px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.app-navbar__profile-btn:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 40%, transparent);
+  background: color-mix(in srgb, var(--color-primary) 6%, transparent);
+}
+
+.app-navbar__avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary), #10B981);
+  color: var(--btn-primary-text);
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.app-navbar__avatar--lg {
+  width: 40px;
+  height: 40px;
+  font-size: 15px;
+}
+
+.app-navbar__profile-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-navbar__chevron {
+  color: var(--text-tertiary);
+  transition: transform 0.2s ease;
+}
+
+.app-navbar__chevron.is-open {
+  transform: rotate(180deg);
+}
+
+/* ─── Dropdown Base ──────────────────────────────────────────── */
+.app-navbar__dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--bg-surface-elevated);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg), 0 0 0 1px var(--border-glow);
+  z-index: 200;
+  animation: dropdown-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) both;
+  min-width: 220px;
+  overflow: hidden;
+}
+
+@keyframes dropdown-in {
+  from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+.app-navbar__dropdown-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 10px;
+}
+
+.app-navbar__dropdown-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+}
+
+.app-navbar__dropdown-divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 4px 0;
+}
+
+.app-navbar__mark-all {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--color-primary);
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+}
+
+.app-navbar__mark-all:hover { text-decoration: underline; }
+
+/* ─── Notifications Dropdown ─────────────────────────────────── */
+.app-navbar__dropdown--notif {
+  min-width: 320px;
+  max-width: 360px;
+}
+
+.app-navbar__notif-list {
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 4px 0 8px;
+}
+
+.app-navbar__notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.app-navbar__notif-item:hover {
+  background: color-mix(in srgb, var(--color-primary) 5%, transparent);
+}
+
+.app-navbar__notif-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex-shrink: 0;
+  background: var(--border-subtle);
+  transition: background 0.15s;
+}
+
+.app-navbar__notif-item.is-unread .app-navbar__notif-dot { background: var(--color-primary); }
+.notif-type--success.is-unread .app-navbar__notif-dot    { background: var(--color-success); }
+.notif-type--warning.is-unread .app-navbar__notif-dot    { background: var(--color-warning); }
+
+.app-navbar__notif-body { flex: 1; min-width: 0; }
+
+.app-navbar__notif-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 2px;
+}
+
+.app-navbar__notif-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 0 0 4px;
+  line-height: 1.4;
+}
+
+.app-navbar__notif-time {
+  font-size: 10.5px;
+  color: var(--text-tertiary);
+}
+
+/* ─── Profile Dropdown ───────────────────────────────────────── */
+.app-navbar__dropdown--profile { min-width: 240px; }
+
+.app-navbar__profile-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+.app-navbar__profile-full {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 2px;
+}
+
+.app-navbar__profile-email {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 0 0 6px;
+}
+
+.app-navbar__role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-right: 4px;
+  letter-spacing: 0.02em;
+}
+
+.app-navbar__role-badge--premium {
+  background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+  color: var(--color-primary);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
+}
+
+.app-navbar__role-badge--admin {
+  background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+  color: var(--color-danger);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 25%, transparent);
+}
+
+/* ─── Menu Items ─────────────────────────────────────────────── */
+.app-navbar__menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.app-navbar__menu-item:hover {
+  background: color-mix(in srgb, var(--color-primary) 6%, transparent);
+  color: var(--text-primary);
+}
+
+.app-navbar__menu-item--danger { color: var(--color-danger); }
+.app-navbar__menu-item--danger:hover {
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--color-danger);
+}
+
+/* Focus */
+.app-navbar__icon-btn:focus-visible,
+.app-navbar__profile-btn:focus-visible,
+.app-navbar__new-btn:focus-visible,
+.app-navbar__search-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* ─── Hamburger (mobile only) ────────────────────────────────── */
+.app-navbar__hamburger {
+  display: none;          /* hidden on desktop */
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.app-navbar__hamburger:hover {
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  color: var(--color-primary);
+  border-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
+}
+
+@media (max-width: 768px) {
+  .app-navbar { padding: 0 14px; gap: 8px; }
+
+  /* Show hamburger */
+  .app-navbar__hamburger { display: flex; }
+
+  /* Shrink / hide elements that don't fit */
+  .app-navbar__new-btn span { display: none; }
+  .app-navbar__new-btn { padding: 8px 10px; border-radius: 9px; }
+  .app-navbar__profile-name { display: none; }
+
+  /* Collapse search button label */
+  .app-navbar__search-btn span { display: none; }
+  .app-navbar__search-btn { min-width: unset; padding: 7px 10px; }
+  .app-navbar__kbd { display: none; }
+
+  /* Wider search when open */
+  .app-navbar__search-open { min-width: 200px; }
+}

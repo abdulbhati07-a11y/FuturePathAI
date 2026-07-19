@@ -1,0 +1,212 @@
+.scenario-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
+  margin: 24px 0;
+}
+
+.scenario-card {
+  position: relative;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.scenario-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.scenario-card--featured {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary), 0 4px 12px color-mix(in srgb, var(--color-primary) 20%, transparent);
+}
+
+.scenario-card__badge {
+  position: absolute;
+  top: -10px;
+  left: 18px;
+  background: var(--color-primary);
+  color: var(--btn-primary-text);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 3px 9px;
+  border-radius: 20px;
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--color-primary) 30%, transparent);
+}
+
+.scenario-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.scenario-card__label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+}
+
+.scenario-card__probability {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.scenario-card__title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.scenario-card__description {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin: 0;
+  flex: 1;
+}
+
+.scenario-card__metrics {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.scenario-card__metric-label {
+  font-size: 9.5px;
+  color: var(--text-tertiary);
+  margin: 0 0 3px;
+}
+
+.scenario-card__metric-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .scenario-comparison {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Wrapper ──────────────────────────────────────────────────────────────── */
+.scenario-comparison-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── CSS bar chart (PDF-safe, no canvas) ─────────────────────────────────── */
+.scenario-chart {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 22px 24px;
+}
+
+.scenario-chart__heading {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 20px;
+  letter-spacing: -0.01em;
+}
+
+/* ── Bar groups ───────────────────────────────────────────────────────────── */
+.scenario-chart__bars {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.scenario-chart__bar-group {
+  display: grid;
+  grid-template-columns: 80px 1fr 72px;
+  align-items: center;
+  gap: 12px;
+}
+
+.scenario-chart__bar-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.scenario-chart__bar-track {
+  height: 28px;
+  background: var(--bg-surface-elevated);
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+
+.scenario-chart__bar-fill {
+  height: 100%;
+  border-radius: 6px;
+  min-width: 4px;
+  transition: width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  /* Slight sheen overlay */
+  position: relative;
+}
+
+.scenario-chart__bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 40%;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 6px 6px 0 0;
+}
+
+.scenario-chart__bar-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+/* ── Legend ───────────────────────────────────────────────────────────────── */
+.scenario-chart__legend {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.scenario-chart__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.scenario-chart__legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+  .scenario-chart__bar-group {
+    grid-template-columns: 60px 1fr 56px;
+    gap: 8px;
+  }
+}

@@ -1,0 +1,6 @@
+.landing-page {
+  min-height: 100vh;
+  background: var(--bg-root);
+  overflow-x: hidden;
+  position: relative;
+}

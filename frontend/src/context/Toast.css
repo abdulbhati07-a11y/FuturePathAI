@@ -1,0 +1,127 @@
+/* ── Toast container ──────────────────────────────────────────────────────── */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  pointer-events: none;   /* let clicks fall through the empty area */
+  width: max-content;
+  max-width: calc(100vw - 32px);
+}
+
+/* ── Individual toast ─────────────────────────────────────────────────────── */
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 16px 11px 14px;
+  border-radius: 11px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface-elevated);
+  box-shadow: var(--shadow-lg);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  pointer-events: all;
+  min-width: 260px;
+  max-width: 420px;
+
+  /* Enter animation */
+  animation: toast-enter 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes toast-enter {
+  from { opacity: 0; transform: translateY(14px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+/* Exit animation (triggered by .toast--leaving class) */
+.toast--leaving {
+  animation: toast-leave 0.26s ease-in forwards;
+}
+
+@keyframes toast-leave {
+  from { opacity: 1; transform: translateY(0)   scale(1);    }
+  to   { opacity: 0; transform: translateY(8px) scale(0.95); }
+}
+
+/* ── Type variants ────────────────────────────────────────────────────────── */
+.toast--success {
+  border-color: color-mix(in srgb, var(--color-success) 35%, transparent);
+  background: color-mix(in srgb, var(--color-success) 8%, var(--bg-surface-elevated));
+}
+
+.toast--success .toast__icon { color: var(--color-success); }
+
+.toast--error {
+  border-color: color-mix(in srgb, var(--color-danger) 35%, transparent);
+  background: color-mix(in srgb, var(--color-danger) 8%, var(--bg-surface-elevated));
+}
+
+.toast--error .toast__icon { color: var(--color-danger); }
+
+.toast--warning {
+  border-color: color-mix(in srgb, var(--color-warning) 35%, transparent);
+  background: color-mix(in srgb, var(--color-warning) 8%, var(--bg-surface-elevated));
+}
+
+.toast--warning .toast__icon { color: var(--color-warning); }
+
+.toast--info {
+  border-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
+  background: color-mix(in srgb, var(--color-primary) 7%, var(--bg-surface-elevated));
+}
+
+.toast--info .toast__icon { color: var(--color-primary); }
+
+/* ── Parts ────────────────────────────────────────────────────────────────── */
+.toast__icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.toast__message {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toast__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  border: none;
+  background: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.15s, color 0.15s;
+  padding: 0;
+}
+
+.toast__close:hover {
+  background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+  color: var(--text-primary);
+}
+
+/* ── Mobile ───────────────────────────────────────────────────────────────── */
+@media (max-width: 500px) {
+  .toast-container { bottom: 16px; max-width: calc(100vw - 24px); }
+  .toast { min-width: unset; white-space: normal; }
+}
+
+/* ── Reduced motion ───────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .toast, .toast--leaving { animation: none; }
+}

@@ -1,0 +1,110 @@
+.chat-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  max-width: 70%;
+}
+
+.chat-message--ai {
+  align-self: flex-start;
+}
+
+.chat-message--user {
+  align-self: flex-end;
+  flex-direction: row;
+}
+
+.chat-message__avatar {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-message__avatar--ai {
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--color-primary);
+  color: var(--color-primary);
+}
+
+.chat-message__avatar--user {
+  background: var(--color-primary);
+  color: var(--btn-primary-text);
+}
+
+.chat-message__bubble-col {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.chat-message--user .chat-message__bubble-col {
+  align-items: flex-end;
+}
+
+.chat-message__bubble {
+  border-radius: 14px;
+  padding: 14px 16px;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.chat-message--ai .chat-message__bubble {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  border-top-left-radius: 4px;
+}
+
+.chat-message--user .chat-message__bubble {
+  background: var(--color-primary);
+  color: var(--btn-primary-text);
+  border-top-right-radius: 4px;
+}
+
+.chat-message__bubble p {
+  margin: 0 0 8px;
+}
+
+.chat-message__bubble p:last-child {
+  margin-bottom: 0;
+}
+
+.chat-message__cursor {
+  display: inline-block;
+  width: 2px;
+  height: 14px;
+  background: currentColor;
+  margin-left: 2px;
+  vertical-align: middle;
+  animation: chat-cursor-blink 1s step-end infinite;
+}
+
+.chat-message__meta {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--text-tertiary);
+  padding: 0 4px;
+}
+
+@keyframes chat-cursor-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-message__cursor {
+    animation: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .chat-message {
+    max-width: 88%;
+  }
+}
