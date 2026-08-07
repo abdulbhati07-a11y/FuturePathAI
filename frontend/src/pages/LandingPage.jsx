@@ -1,4 +1,4 @@
-import PublicNav from '../components/landing/PublicNav';
+import AppNavbar from '../components/AppNavbar';
 import Hero from '../components/landing/Hero';
 import FeatureGrid from '../components/landing/FeatureGrid';
 import DemoPanel from '../components/landing/DemoPanel';
@@ -12,7 +12,7 @@ import './LandingPage.css';
 export default function LandingPage() {
   return (
     <div className="landing-page">
-      <PublicNav />
+      <AppNavbar activeItem="home" />
       <Hero />
       <FeatureGrid />
       <DemoPanel />
@@ -24,3 +24,4 @@ export default function LandingPage() {
     </div>
   );
 }
+

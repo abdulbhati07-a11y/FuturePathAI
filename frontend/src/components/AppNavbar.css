@@ -6,13 +6,15 @@
   height: 60px;
   padding: 0 28px;
   background: var(--bg-glass);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border-subtle);
+  box-shadow: 0 4px 32px -12px rgba(0, 0, 0, 0.15);
   position: sticky;
   top: 0;
   z-index: 50;
   flex-shrink: 0;
+  transition: all 0.3s ease;
 }
 
 /* ─── Left ───────────────────────────────────────────────────── */
@@ -22,14 +24,69 @@
 }
 
 .app-navbar__page-title {
-  font-size: 16px;
-  font-weight: 700;
+  display: none; /* Hide the page title on desktop since we have nav links now */
+}
+
+.app-navbar__desktop-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 20px;
+}
+
+.app-navbar__nav-item {
+  position: relative;
+  background: none;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color 0.3s ease, transform 0.2s ease;
+}
+
+/* Pseudo-element for the animated underline */
+.app-navbar__nav-item::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%) scaleX(0);
+  width: 60%;
+  height: 2px;
+  background-color: var(--color-primary);
+  border-radius: 2px;
+  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  opacity: 0;
+}
+
+.app-navbar__nav-item:hover {
   color: var(--text-primary);
-  margin: 0;
-  letter-spacing: -0.01em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+}
+
+.app-navbar__nav-item:hover::after {
+  transform: translateX(-50%) scaleX(1);
+  opacity: 0.5;
+}
+
+.app-navbar__nav-item.is-active {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.app-navbar__nav-item.is-active::after {
+  transform: translateX(-50%) scaleX(1);
+  opacity: 1;
+}
+
+.app-navbar__brand-mobile {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+  margin-left: 8px;
 }
 
 /* ─── Center / Search ────────────────────────────────────────── */
@@ -42,22 +99,26 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--bg-surface);
+  background: color-mix(in srgb, var(--bg-surface) 70%, transparent);
   border: 1px solid var(--border-subtle);
-  border-radius: 9px;
-  padding: 7px 14px;
+  border-radius: 24px;
+  padding: 8px 18px;
   color: var(--text-tertiary);
-  font-size: 13px;
+  font-size: 13.5px;
   font-family: inherit;
   cursor: pointer;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
-  min-width: 200px;
+  min-width: 240px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.03);
 }
 
 .app-navbar__search-btn:hover {
-  border-color: var(--color-primary-glow);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 8%, transparent);
+  background: var(--bg-surface);
+  border-color: var(--color-primary);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--color-primary) 12%, transparent);
+  transform: translateY(-1px);
+  color: var(--text-secondary);
 }
 
 .app-navbar__kbd {
@@ -334,20 +395,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 9px;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
   border: 1px solid var(--border-subtle);
-  background: var(--bg-surface);
+  background: color-mix(in srgb, var(--bg-surface) 70%, transparent);
   color: var(--text-secondary);
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .app-navbar__icon-btn:hover {
-  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
-  color: var(--text-primary);
-  border-color: color-mix(in srgb, var(--color-primary) 35%, transparent);
+  background: var(--bg-surface);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary) 15%, transparent);
+  transform: translateY(-1px);
 }
 
 .app-navbar__badge {
@@ -378,19 +441,21 @@
 .app-navbar__profile-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: var(--bg-surface);
+  gap: 10px;
+  background: color-mix(in srgb, var(--bg-surface) 70%, transparent);
   border: 1px solid var(--border-subtle);
-  border-radius: 10px;
-  padding: 6px 10px 6px 6px;
+  border-radius: 20px;
+  padding: 6px 12px 6px 6px;
   cursor: pointer;
   font-family: inherit;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .app-navbar__profile-btn:hover {
-  border-color: color-mix(in srgb, var(--color-primary) 40%, transparent);
-  background: color-mix(in srgb, var(--color-primary) 6%, transparent);
+  background: var(--bg-surface);
+  border-color: var(--color-primary);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary) 15%, transparent);
+  transform: translateY(-1px);
 }
 
 .app-navbar__avatar {
@@ -635,6 +700,21 @@
   outline-offset: 2px;
 }
 
+/* ─── Unauthenticated ────────────────────────────────────────── */
+.app-navbar__signin-btn {
+  background: none;
+  border: none;
+  padding: 8px 14px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+.app-navbar__signin-btn:hover {
+  color: var(--text-primary);
+}
+
 /* ─── Hamburger (mobile only) ────────────────────────────────── */
 .app-navbar__hamburger {
   display: none;          /* hidden on desktop */
@@ -660,8 +740,16 @@
 @media (max-width: 768px) {
   .app-navbar { padding: 0 14px; gap: 8px; }
 
-  /* Show hamburger */
+  /* Show hamburger and brand, hide desktop nav */
   .app-navbar__hamburger { display: flex; }
+  .app-navbar__brand-mobile { display: flex; }
+  .app-navbar__desktop-nav { display: none; }
+  
+  /* Optionally restore page title on mobile */
+  .app-navbar__page-title {
+    display: block;
+    font-size: 15px;
+  }
 
   /* Shrink / hide elements that don't fit */
   .app-navbar__new-btn span { display: none; }

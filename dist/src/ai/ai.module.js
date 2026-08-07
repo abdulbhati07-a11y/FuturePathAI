@@ -9,7 +9,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AiModule = void 0;
 const common_1 = require("@nestjs/common");
 const ai_provider_interface_1 = require("./interfaces/ai.provider.interface");
-const groq_ai_provider_1 = require("./providers/groq-ai.provider");
+const opencodezen_ai_provider_1 = require("./providers/opencodezen-ai.provider");
 const ai_controller_1 = require("./ai.controller");
 const ai_service_1 = require("./ai.service");
 let AiModule = class AiModule {
@@ -23,7 +23,7 @@ exports.AiModule = AiModule = __decorate([
             ai_service_1.AiService,
             {
                 provide: ai_provider_interface_1.AI_PROVIDER,
-                useClass: groq_ai_provider_1.GroqAiProvider,
+                useClass: opencodezen_ai_provider_1.OpenCodeZenAiProvider,
             },
         ],
         exports: [ai_provider_interface_1.AI_PROVIDER, ai_service_1.AiService],

@@ -1,0 +1,13 @@
+# Long-cache the fingerprinted build assets (filenames change per build)
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Never cache the HTML shell so new deploys are picked up immediately
+/index.html
+  Cache-Control: no-cache
+
+# Baseline security headers
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY

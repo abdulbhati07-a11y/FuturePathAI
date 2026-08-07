@@ -1,13 +1,34 @@
 .dashboard-page {
   display: flex;
+  flex-direction: column;
   padding: 28px 32px;
-  gap: 24px;
+  gap: 0;
   min-height: 100%;
 }
 
 .dashboard-page__main {
   flex: 1;
   min-width: 0;
+}
+
+/* ── Grid: Recent sims (2/3) + Advisor (1/3) side by side ──── */
+.dashboard-page__grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.dashboard-page__grid-main { min-width: 0; }
+.dashboard-page__grid-side { min-width: 0; }
+
+@media (max-width: 1100px) {
+  .dashboard-page__grid {
+    grid-template-columns: 1fr;
+  }
+  .dashboard-page__grid-side {
+    order: -1; /* Advisor on top for mobile */
+  }
 }
 
 /* ── Error banner ─────────────────────────────────────────── */

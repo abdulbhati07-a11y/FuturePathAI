@@ -143,7 +143,7 @@ function TrendIcon({ trend }) {
 /* ════════════════════════════════════════════════════════════════════════════
    Main StatsGrid
    ════════════════════════════════════════════════════════════════════════════ */
-export default function StatsGrid({ stats }) {
+export default function StatsGrid({ stats, exclude = [] }) {
   if (!stats) return null;
 
   const { stabilityIndex, riskVector, projectedCapital, pathAlpha } = stats;
@@ -152,60 +152,79 @@ export default function StatsGrid({ stats }) {
   const primary = cssVar('--color-primary') || '#6366F1';
   const success = cssVar('--color-success') || '#10B981';
 
+  // Data-driven card list so consumers can hide specific metrics via `exclude`.
+  // The dashboard hides `pathAlpha` because the SpotlightHero owns that figure.
+  const cards = [
+    {
+      key: 'stabilityIndex',
+      render: () => (
+        <div className="stat-card stat-card--live" key="stabilityIndex">
+          <span className="stat-card__live-dot" aria-hidden="true" />
+          <div className="stat-card__head">
+            <span className="stat-card__label">STABILITY INDEX</span>
+            <TrendIcon trend={stabilityIndex.trend} />
+          </div>
+          <BarSparkline data={stabilityIndex.history} color={primary} />
+          <p className="stat-card__value">{stabilityIndex.value}%</p>
+          <span className="stat-card__source">Market Volatility Analysis</span>
+        </div>
+      ),
+    },
+    {
+      key: 'riskVector',
+      render: () => (
+        <div className="stat-card stat-card--live" key="riskVector">
+          <span className="stat-card__live-dot" aria-hidden="true" />
+          <div className="stat-card__head">
+            <span className="stat-card__label">RISK VECTOR</span>
+            <TrendIcon trend={riskVector.trend} />
+          </div>
+          <RiskGauge value={riskVector.value} label={riskVector.label} />
+          <p className="stat-card__value">{riskVector.value} <span className="stat-card__unit">pts</span></p>
+          <span className="stat-card__source">Risk Assessment Model</span>
+        </div>
+      ),
+    },
+    {
+      key: 'projectedCapital',
+      render: () => (
+        <div className="stat-card stat-card--live" key="projectedCapital">
+          <span className="stat-card__live-dot" aria-hidden="true" />
+          <div className="stat-card__head">
+            <span className="stat-card__label">PROJ. CAPITAL</span>
+            <TrendIcon trend={projectedCapital?.trend} />
+          </div>
+          <AreaSparkline data={projectedCapital.history} color={success} />
+          <p className="stat-card__value">${projectedCapital.value}M</p>
+          <span className="stat-card__source">Portfolio Projection</span>
+        </div>
+      ),
+    },
+    {
+      key: 'pathAlpha',
+      render: () => (
+        <div className="stat-card stat-card--live" key="pathAlpha">
+          <span className="stat-card__live-dot" aria-hidden="true" />
+          <div className="stat-card__head">
+            <span className="stat-card__label">PATH ALPHA</span>
+            <TrendIcon trend={pathAlpha.trend} />
+          </div>
+          <RadialSparkline percent={pathAlpha.value} color={primary} />
+          <p className="stat-card__value">
+            {pathAlpha.label}{' '}
+            <span className="stat-card__value-sub">+{pathAlpha.value}%</span>
+          </p>
+          <span className="stat-card__source">Decision Engine Output</span>
+        </div>
+      ),
+    },
+  ];
+
+  const visible = cards.filter(c => !exclude.includes(c.key));
+
   return (
-    <div className="stats-grid">
-
-      {/* ── Card 1: Stability Index — bar sparkline ────────────────────── */}
-      <div className="stat-card stat-card--live">
-        <span className="stat-card__live-dot" aria-hidden="true" />
-        <div className="stat-card__head">
-          <span className="stat-card__label">STABILITY INDEX</span>
-          <TrendIcon trend={stabilityIndex.trend} />
-        </div>
-        <BarSparkline data={stabilityIndex.history} color={primary} />
-        <p className="stat-card__value">{stabilityIndex.value}%</p>
-        <span className="stat-card__source">Market Volatility Analysis</span>
-      </div>
-
-      {/* ── Card 2: Risk Vector — gauge bar ───────────────────────────── */}
-      <div className="stat-card stat-card--live">
-        <span className="stat-card__live-dot" aria-hidden="true" />
-        <div className="stat-card__head">
-          <span className="stat-card__label">RISK VECTOR</span>
-          <TrendIcon trend={riskVector.trend} />
-        </div>
-        <RiskGauge value={riskVector.value} label={riskVector.label} />
-        <p className="stat-card__value">{riskVector.value} <span className="stat-card__unit">pts</span></p>
-        <span className="stat-card__source">Risk Assessment Model</span>
-      </div>
-
-      {/* ── Card 3: Projected Capital — area sparkline ────────────────── */}
-      <div className="stat-card stat-card--live">
-        <span className="stat-card__live-dot" aria-hidden="true" />
-        <div className="stat-card__head">
-          <span className="stat-card__label">PROJ. CAPITAL</span>
-          <TrendIcon trend={projectedCapital?.trend} />
-        </div>
-        <AreaSparkline data={projectedCapital.history} color={success} />
-        <p className="stat-card__value">${projectedCapital.value}M</p>
-        <span className="stat-card__source">Portfolio Projection</span>
-      </div>
-
-      {/* ── Card 4: Path Alpha — radial arc ───────────────────────────── */}
-      <div className="stat-card stat-card--live">
-        <span className="stat-card__live-dot" aria-hidden="true" />
-        <div className="stat-card__head">
-          <span className="stat-card__label">PATH ALPHA</span>
-          <TrendIcon trend={pathAlpha.trend} />
-        </div>
-        <RadialSparkline percent={pathAlpha.value} color={primary} />
-        <p className="stat-card__value">
-          {pathAlpha.label}{' '}
-          <span className="stat-card__value-sub">+{pathAlpha.value}%</span>
-        </p>
-        <span className="stat-card__source">Decision Engine Output</span>
-      </div>
-
+    <div className="stats-grid" data-count={visible.length}>
+      {visible.map(c => c.render())}
     </div>
   );
 }

@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { apiClient } from '../api/client';
-import SimulationHeader from '../components/chat/SimulationHeader';
 import ChatMessage from '../components/chat/ChatMessage';
 import ChatComposer from '../components/chat/ChatComposer';
 import LiveInsightPanel from '../components/chat/LiveInsightPanel';
+import { extractOptions } from '../components/chat/messageFormat';
 import { ThinkingIndicator, SavePauseBar } from '../components/chat/ChatFooter';
 import { createSimulation, streamChatReply, saveDraftAndPause } from '../api/chat';
 import './NewSimulationPage.css';
@@ -33,12 +33,14 @@ export default function NewSimulationPage() {
   const [messages, setMessages]             = useState([]);
   const [suggestions, setSuggestions]       = useState([]);
   const [insight, setInsight]               = useState(null);
+  const [metrics, setMetrics]               = useState(null);
   const [isThinking, setIsThinking]         = useState(false);
   const [isStreaming, setIsStreaming]        = useState(false);
   const [currentStep, setCurrentStep]       = useState(0);
   const [isSaving, setIsSaving]             = useState(false);
   const [isGenerating, setIsGenerating]     = useState(false);
   const [initError, setInitError]           = useState('');
+  const [resumeCtx, setResumeCtx]           = useState(null);
 
   const scrollRef    = useRef(null);
   const atBottomRef  = useRef(true);
@@ -50,6 +52,37 @@ export default function NewSimulationPage() {
     abortRef.current = false;
     return () => { abortRef.current = true; };
   }, []);
+
+  // ── Restore draft from localStorage on mount ───────────────────────────
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('fp_sim_draft');
+      if (!saved) return;
+      const { simId, msgs, step } = JSON.parse(saved);
+      if (simId && msgs?.length > 0) {
+        setSimulationId(simId);
+        setMessages(msgs);
+        setCurrentStep(step ?? msgs.filter(m => m.role === 'user').length);
+      }
+    } catch {
+      // corrupted draft — ignore
+    }
+  }, []);
+
+  // ── Autosave draft to localStorage after each completed step ──────────
+  useEffect(() => {
+    if (!simulationId || messages.length === 0 || isStreaming) return;
+    try {
+      localStorage.setItem('fp_sim_draft', JSON.stringify({
+        simId: simulationId,
+        msgs: messages,
+        step: currentStep,
+        savedAt: Date.now(),
+      }));
+    } catch {
+      // storage quota exceeded — ignore
+    }
+  }, [simulationId, messages, currentStep, isStreaming]);
 
   // ── Auto-scroll ────────────────────────────────────────────────────────────
   function handleScroll() {
@@ -119,8 +152,10 @@ export default function NewSimulationPage() {
    * @param {string|null} userText - the latest user message (null = opening greeting)
    * @param {Array}   history      - all prior messages in API format
    */
-  async function runStreamTurn(simId, userText, history) {
+  async function runStreamTurn(simId, userText, history, attempt = 0) {
+    const MAX_RETRIES = 3;
     setSuggestions([]);
+    setResumeCtx(null);
     setIsThinking(true);
 
     const aiId = `a_${Date.now()}`;
@@ -128,11 +163,11 @@ export default function NewSimulationPage() {
     let streamStarted = false;
 
     try {
-      const { suggestions: nextSuggestions, insight: nextInsight } =
+      const { suggestions: nextSuggestions, insight: nextInsight, metrics: nextMetrics } =
         await streamChatReply(
           simId,
-          userText,       // latest user message (or null)
-          history,        // full prior history
+          userText,
+          history,
           (chunk) => {
             if (abortRef.current) return;
             if (!streamStarted) {
@@ -152,11 +187,59 @@ export default function NewSimulationPage() {
         );
 
       if (!abortRef.current) {
-        setSuggestions(nextSuggestions || []);
+        // Prefer the options the AI embedded in its own question (parsed
+        // client-side, no extra round-trip). Fall back to the server's
+        // generated suggestions only when the message has no lettered options.
+        const embedded = extractOptions(accumulated).map(o => o.text);
+        setSuggestions(embedded.length >= 2 ? embedded : (nextSuggestions || []));
         if (nextInsight) setInsight(nextInsight);
+        if (nextMetrics) setMetrics(nextMetrics);
       }
     } catch (err) {
-      if (!abortRef.current) {
+      if (abortRef.current) return;
+
+      // Retry on network errors (not on AI-level errors like "Stream failed")
+      const isNetworkError = err.message?.includes('Network error') ||
+        err.message?.includes('fetch') ||
+        err.message?.includes('stream');
+
+      if (isNetworkError && attempt < MAX_RETRIES) {
+        const delay = Math.min(1000 * 2 ** attempt, 8000); // 1s, 2s, 4s, 8s cap
+        // Drop any partial bubble from this failed attempt so the retry
+        // doesn't leave a truncated half-message stacked above the new one.
+        if (streamStarted) {
+          setMessages(prev => prev.filter(m => m.id !== aiId));
+        }
+        setMessages(prev => [
+          ...prev,
+          {
+            id: `retry_${Date.now()}`,
+            role: 'assistant',
+            content: `⚡ Connection interrupted — retrying in ${delay / 1000}s… (attempt ${attempt + 1}/${MAX_RETRIES})`,
+            timestamp: ts(),
+          },
+        ]);
+        setIsThinking(false);
+        setIsStreaming(false);
+        await new Promise(r => setTimeout(r, delay));
+        if (!abortRef.current) {
+          // Remove the retry notice and try again
+          setMessages(prev => prev.filter(m => !m.id.startsWith('retry_')));
+          await runStreamTurn(simId, userText, history, attempt + 1);
+        }
+        return;
+      }
+
+      // Retries exhausted (or a non-network error). If we already have partial
+      // text, keep it and offer a one-tap resume instead of discarding it.
+      if (streamStarted && accumulated.trim()) {
+        setMessages(prev =>
+          prev.map(m =>
+            m.id === aiId ? { ...m, content: accumulated, interrupted: true } : m,
+          ),
+        );
+        setResumeCtx({ simId, userText, history });
+      } else {
         setMessages(prev => [
           ...prev,
           {
@@ -166,6 +249,7 @@ export default function NewSimulationPage() {
             timestamp: ts(),
           },
         ]);
+        setResumeCtx({ simId, userText, history });
       }
     } finally {
       if (!abortRef.current) {
@@ -210,12 +294,23 @@ export default function NewSimulationPage() {
     }
   }
 
+  // ── Resume an interrupted turn ─────────────────────────────────────────────
+  function handleResume() {
+    if (!resumeCtx) return;
+    const { simId, userText, history } = resumeCtx;
+    // Drop any interrupted/error bubble before re-running the turn.
+    setMessages(prev => prev.filter(m => !m.interrupted && !m.id.startsWith('err_')));
+    setResumeCtx(null);
+    runStreamTurn(simId, userText, history);
+  }
+
   // ── Save draft ─────────────────────────────────────────────────────────────
   async function handleSaveDraft() {
     if (!simulationId) { navigate('/app/dashboard'); return; }
     setIsSaving(true);
     try {
       await saveDraftAndPause(simulationId);
+      localStorage.removeItem('fp_sim_draft');
       navigate('/app/dashboard');
     } catch {
       setIsSaving(false);
@@ -232,6 +327,7 @@ export default function NewSimulationPage() {
       // 2. Generate the AI report
       await apiClient.post(`/reports/generate/${simulationId}`);
       // 3. Navigate to results
+      localStorage.removeItem('fp_sim_draft');
       navigate(`/simulations/${simulationId}/results`);
     } catch (err) {
       setIsGenerating(false);
@@ -253,17 +349,44 @@ export default function NewSimulationPage() {
   const isComplete = currentStep >= TOTAL_STEPS && !isThinking && !isStreaming;
   const busy       = isThinking || isStreaming || isGenerating;
 
+  // Detect the AI's own "ready to generate report" sentinel in the last
+  // assistant message, so we can surface a prominent CTA instead of relying
+  // on the user typing "generate report".
+  const lastAiMessage = [...messages].reverse().find(m => m.role === 'assistant');
+  const reportReady =
+    !isStreaming && !isThinking &&
+    /ready to generate your full simulation report/i.test(lastAiMessage?.content || '');
+
+  // Answered-question progress toward the ~5-exchange target the prompt aims for.
+  const answeredCount = messages.filter(m => m.role === 'user').length;
+  const targetQuestions = 5;
+
   return (
     <div className="new-sim-page">
-      <SimulationHeader
-        currentStep={currentStep}
-        totalSteps={TOTAL_STEPS}
-        onClose={() => navigate('/app/dashboard')}
-      />
 
       <div className="new-sim-page__body">
         {/* ── Chat column ─────────────────────────────────────────────────── */}
         <div className="new-sim-page__chat-col">
+          {/* ── Step progress ─────────────────────────────────────────────── */}
+          <div className="new-sim-page__progress">
+            {Array.from({ length: TOTAL_STEPS }, (_, i) => (
+              <div
+                key={i}
+                className={
+                  'new-sim-page__progress-step' +
+                  (i < currentStep ? ' new-sim-page__progress-step--done' : '') +
+                  (i === currentStep && !isComplete ? ' new-sim-page__progress-step--active' : '') +
+                  (isComplete ? ' new-sim-page__progress-step--done' : '')
+                }
+              />
+            ))}
+            <span className="new-sim-page__progress-label">
+              {isComplete || reportReady
+                ? '✅ Ready for results'
+                : `Question ${Math.min(answeredCount + 1, targetQuestions)} of ~${targetQuestions}`}
+            </span>
+          </div>
+
           <div
             className="new-sim-page__messages"
             ref={scrollRef}
@@ -289,6 +412,10 @@ export default function NewSimulationPage() {
                   m.role === 'assistant' &&
                   idx === messages.length - 1
                 }
+                showOptions={
+                  m.role === 'assistant' && idx === messages.length - 1 && !busy
+                }
+                onOptionClick={handleSend}
               />
             ))}
           </div>
@@ -296,6 +423,37 @@ export default function NewSimulationPage() {
           {/* ── Footer ──────────────────────────────────────────────────── */}
           <div className="new-sim-page__footer">
             {isThinking && <ThinkingIndicator />}
+
+            {resumeCtx && !busy && (
+              <div className="new-sim-page__resume">
+                <span className="new-sim-page__resume-text">
+                  The reply was interrupted.
+                </span>
+                <button
+                  type="button"
+                  className="new-sim-page__resume-btn"
+                  onClick={handleResume}
+                >
+                  ↻ Resume
+                </button>
+              </div>
+            )}
+
+            {reportReady && !isComplete && !isGenerating && (
+              <div className="new-sim-page__report-cta">
+                <span className="new-sim-page__report-cta-text">
+                  ⚡ Enough context gathered — your full report is ready to generate.
+                </span>
+                <button
+                  type="button"
+                  className="new-sim-page__report-cta-btn"
+                  onClick={handleGenerateReport}
+                  disabled={busy || !simulationId}
+                >
+                  Generate Full Report →
+                </button>
+              </div>
+            )}
 
             {isComplete ? (
               /* Simulation steps complete — prompt user to view results */
@@ -348,7 +506,7 @@ export default function NewSimulationPage() {
 
         {/* ── Live insight panel ───────────────────────────────────────── */}
         <div className="new-sim-page__insight-slot">
-          <LiveInsightPanel insight={insight} />
+          <LiveInsightPanel insight={insight} metrics={metrics} />
         </div>
       </div>
     </div>

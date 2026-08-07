@@ -350,3 +350,20 @@ a:hover { color: var(--color-primary-hover); text-decoration: underline; }
 /* html2canvas sees the DOM as-is so we show them via JS, not print media.    */
 .pdf-only { display: none !important; }
 .pdf-capturing .pdf-only { display: flex !important; }
+
+/* ─── Global reduced-motion safety net ───────────────────────────────────────
+   Component stylesheets carry their own `prefers-reduced-motion` guards where
+   an effect needs bespoke handling, but this catch-all ensures that any
+   animation or transition we add anywhere is neutralised for users who ask the
+   OS to minimise motion. We keep a 0.01ms duration (rather than `none`) so
+   animation `*end` events still fire and JS that awaits them doesn't hang.     */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

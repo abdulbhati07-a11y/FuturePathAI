@@ -149,6 +149,43 @@
   color: var(--color-primary);
 }
 
+/* Copy-link + Compare buttons — same neutral chrome as toggle/rerun */
+.results-page__copy-btn,
+.results-page__compare-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.results-page__copy-btn:hover,
+.results-page__compare-btn:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 40%, transparent);
+  color: var(--color-primary);
+}
+
+/* Copied confirmation state — green success flash */
+.results-page__copy-btn.is-copied {
+  background: color-mix(in srgb, var(--color-success) 12%, transparent);
+  border-color: color-mix(in srgb, var(--color-success) 40%, transparent);
+  color: var(--color-success);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .results-page__copy-btn,
+  .results-page__compare-btn { transition: none; }
+}
+
 /* Export PDF button — primary action */
 .results-page__export-btn {
   display: inline-flex;
@@ -181,6 +218,24 @@
 
 .results-page__spinner-sm {
   animation: spin 0.8s linear infinite;
+}
+
+/* ── Loading skeleton ─────────────────────────────────────────────────────── */
+.results-page__skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-bottom: 48px;
+}
+
+.results-page__skeleton-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 700px) {
+  .results-page__skeleton-row { grid-template-columns: 1fr; }
 }
 
 /* ── Report container ─────────────────────────────────────────────────────── */

@@ -16,12 +16,39 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { BullModule } from '@nestjs/bullmq';
 import { CacheModule } from '@nestjs/cache-manager';
 // import { keyvRedis } from 'cache-manager-redis-yet'; // Kept for reference if enabling redis cache
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
+    }),
+
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => [
+        {
+          // General API rate limit: 120 requests per minute per IP
+          name: 'default',
+          ttl: 60_000,
+          limit: 120,
+        },
+        {
+          // Strict limit for AI chat stream: 10 per minute per IP
+          name: 'ai-chat',
+          ttl: 60_000,
+          limit: 10,
+        },
+        {
+          // Topic generation: 20 per minute
+          name: 'ai-topic',
+          ttl: 60_000,
+          limit: 20,
+        },
+      ],
+      inject: [ConfigService],
     }),
 
     PrismaModule,
@@ -75,6 +102,6 @@ import { CacheModule } from '@nestjs/cache-manager';
     AnalyticsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

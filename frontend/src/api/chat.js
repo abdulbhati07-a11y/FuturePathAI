@@ -78,7 +78,11 @@ export async function streamChatReply(simulationId, userMessage, history, onChun
     }
 
     const suggestions = MOCK_SUGGESTIONS[mockReplyIndex % MOCK_SUGGESTIONS.length];
-    return { suggestions, insight: mockReplyIndex === 1 ? MOCK_INSIGHT : null };
+    return {
+      suggestions,
+      insight: mockReplyIndex === 1 ? MOCK_INSIGHT : null,
+      metrics: { riskLevel: 60, confidence: 70, answeredTurns: mockReplyIndex },
+    };
   }
 
   // ── Real streaming ────────────────────────────────────────────────────────
@@ -128,6 +132,7 @@ export async function streamChatReply(simulationId, userMessage, history, onChun
   let buffer = '';
   let suggestions = [];
   let insight = null;
+  let metrics = null;
 
   try {
     while (true) {
@@ -164,7 +169,11 @@ export async function streamChatReply(simulationId, userMessage, history, onChun
               break;
 
             case 'metrics':
-              // Available for future use (e.g. updating a risk gauge)
+              try {
+                metrics = typeof event.value === 'string'
+                  ? JSON.parse(event.value)
+                  : event.value;
+              } catch { /* malformed metrics — ignore */ }
               break;
 
             case 'error':
@@ -193,7 +202,7 @@ export async function streamChatReply(simulationId, userMessage, history, onChun
     reader.releaseLock();
   }
 
-  return { suggestions, insight };
+  return { suggestions, insight, metrics };
 }
 
 /**

@@ -44,8 +44,61 @@
   font-size: 12.5px;
   line-height: 1.55;
   color: var(--text-primary);
-  margin: 0 0 12px;
+  margin: 0 0 14px;
 }
+
+/* ── Numeric gauge bars ────────────────────────────────────────────────── */
+.live-insight__metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.live-insight__gauge-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.live-insight__gauge-val {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.live-insight__gauge-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  overflow: hidden;
+}
+
+.live-insight__gauge-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.live-insight__gauge-fill--good {
+  background: linear-gradient(90deg, var(--color-primary) 0%, color-mix(in srgb, var(--color-primary) 130%, white) 100%);
+}
+
+.live-insight__gauge-fill--warn {
+  background: linear-gradient(90deg, #e67e22 0%, #e74c3c 100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-insight__gauge-fill {
+    transition: none;
+  }
+}
+
 
 .live-insight__footer {
   display: flex;
@@ -53,4 +106,30 @@
   gap: 5px;
   font-size: 10.5px;
   color: var(--text-tertiary);
+}
+
+/* ── Compact / mobile layout ─────────────────────────────────────────────────
+   On narrow screens the panel is a full-width strip above the chat rather than
+   a fixed 220px sidebar card. Lay the two gauges side by side and tighten the
+   spacing so it stays a slim banner instead of a tall block. */
+@media (max-width: 900px) {
+  .live-insight {
+    width: 100%;
+    padding: 12px 14px;
+  }
+
+  .live-insight__message {
+    margin-bottom: 10px;
+  }
+
+  .live-insight__metrics {
+    flex-direction: row;
+    gap: 16px;
+    margin-bottom: 10px;
+  }
+
+  .live-insight__gauge {
+    flex: 1;
+    min-width: 0;
+  }
 }

@@ -1,16 +1,19 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, lazy, Suspense } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { usePDF } from 'react-to-pdf';
-import { Globe, Lock, Download, Loader2, RotateCcw, ArrowLeft } from 'lucide-react';
+import { Globe, Lock, Download, Loader2, RotateCcw, ArrowLeft, Link2, Check, GitCompare } from 'lucide-react';
 import PublicNav         from '../components/landing/PublicNav';
 import ResultsHeader     from '../components/results/ResultsHeader';
-import ScenarioComparison from '../components/results/ScenarioComparison';
 import ProsConsPanel     from '../components/results/ProsConsPanel';
 import PathTimeline      from '../components/results/PathTimeline';
 import ExploredAlternatives from '../components/results/ExploredAlternatives';
 import SiteFooter        from '../components/SiteFooter';
 import { getSimulationResult, toggleSimulationPublic } from '../api/results';
+import '../components/Skeleton.css';
 import './ResultsPage.css';
+
+// ScenarioComparison renders a recharts BarChart (~500 kB with the library).
+// Load it lazily so it stays out of the Results page's initial chunk.
+const ScenarioComparison = lazy(() => import('../components/results/ScenarioComparison'));
 
 export default function ResultsPage() {
   const { simulationId } = useParams();
@@ -21,13 +24,17 @@ export default function ResultsPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [isPublic, setIsPublic]   = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [copied, setCopied]       = useState(false);
 
-  // ── react-to-pdf setup ─────────────────────────────────────────────────────
-  // We pass a custom options object so the PDF is A4, has margins, and the
-  // filename includes the report title once we have it.
-  const { toPDF, targetRef } = usePDF({
+  // ── PDF export setup ───────────────────────────────────────────────────────
+  // react-to-pdf (jsPDF + html2canvas, ~600 kB) is imported on demand inside
+  // handleExportPDF so it never lands in the initial page chunk. We keep a
+  // custom options object so the PDF is A4, has margins, and the filename
+  // includes the report title once we have it.
+  const targetRef = useRef(null);
+  const pdfOptions = {
     method: 'save',
-    filename: 'futurepath-report.pdf',   // updated before calling toPDF
+    filename: 'futurepath-report.pdf',   // overridden per-export below
     page: {
       margin: 12,          // mm
       format: 'A4',
@@ -47,7 +54,7 @@ export default function ResultsPage() {
         logging: false,
       },
     },
-  });
+  };
 
   // ── Load report data ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -89,7 +96,9 @@ export default function ResultsPage() {
         .toLowerCase()
         .slice(0, 60);
 
-      await toPDF({ filename: `futurepath-${safeName}.pdf` });
+      // Lazy-load the PDF machinery only when the user actually exports.
+      const { default: generatePDF } = await import('react-to-pdf');
+      await generatePDF(targetRef, { ...pdfOptions, filename: `futurepath-${safeName}.pdf` });
     } catch (err) {
       console.error('PDF export failed:', err);
     } finally {
@@ -111,15 +120,44 @@ export default function ResultsPage() {
     }
   }
 
+  // ── Copy share link ────────────────────────────────────────────────────────
+  async function handleCopyLink() {
+    const url = `${window.location.origin}/simulations/${simulationId}/results`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard API blocked (e.g. insecure context) — fall back to a
+      // temporary input + execCommand so sharing still works.
+      const input = document.createElement('input');
+      input.value = url;
+      document.body.appendChild(input);
+      input.select();
+      try { document.execCommand('copy'); } catch { /* no-op */ }
+      input.remove();
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }
+
   // ── Loading ────────────────────────────────────────────────────────────────
   if (status === 'loading') {
     return (
       <div className="results-page">
         <PublicNav />
-        <div className="results-page__center-state">
-          <Loader2 size={28} strokeWidth={2} className="results-page__spinner" />
-          <p>Loading report…</p>
-        </div>
+        <main className="results-page__main">
+          <div className="results-page__skeleton">
+            <div className="skeleton" style={{ height: 40, width: 200, borderRadius: 8 }} />
+            <div className="skeleton" style={{ height: 120, borderRadius: 14 }} />
+            <div className="skeleton skeleton-chart" style={{ height: 260 }} />
+            <div className="results-page__skeleton-row">
+              <div className="skeleton" style={{ height: 180, borderRadius: 14 }} />
+              <div className="skeleton" style={{ height: 180, borderRadius: 14 }} />
+            </div>
+            <div className="skeleton" style={{ height: 160, borderRadius: 14 }} />
+          </div>
+        </main>
       </div>
     );
   }
@@ -179,6 +217,32 @@ export default function ResultsPage() {
               }
             </button>
 
+            {/* Copy share link */}
+            <button
+              type="button"
+              className={`results-page__copy-btn ${copied ? 'is-copied' : ''}`}
+              onClick={handleCopyLink}
+              title={isPublic
+                ? 'Copy shareable link'
+                : 'Copy link — make the report public so others can open it'}
+            >
+              {copied
+                ? <><Check size={14} strokeWidth={2} /> Copied</>
+                : <><Link2 size={14} strokeWidth={2} /> Copy link</>
+              }
+            </button>
+
+            {/* Compare with another path */}
+            <button
+              type="button"
+              className="results-page__compare-btn"
+              onClick={() => navigate(`/app/simulations/compare?a=${simulationId}`)}
+              title="Compare this path against another simulation"
+            >
+              <GitCompare size={14} strokeWidth={2} />
+              Compare
+            </button>
+
             {/* Re-run */}
             <button
               type="button"
@@ -227,11 +291,13 @@ export default function ResultsPage() {
             onRerun={() => navigate('/app/simulations/new')}
           />
 
-          <ScenarioComparison
-            bestCase={result.bestCase}
-            mostLikely={result.mostLikely}
-            worstCase={result.worstCase}
-          />
+          <Suspense fallback={<div className="skeleton skeleton-chart" style={{ height: 280 }} />}>
+            <ScenarioComparison
+              bestCase={result.bestCase}
+              mostLikely={result.mostLikely}
+              worstCase={result.worstCase}
+            />
+          </Suspense>
 
           <ProsConsPanel
             rightReasons={result.rightReasons}

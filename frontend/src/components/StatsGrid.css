@@ -5,6 +5,11 @@
   margin-bottom: 28px;
 }
 
+/* Adapt column count when a consumer hides cards via the `exclude` prop */
+.stats-grid[data-count="3"] { grid-template-columns: repeat(3, 1fr); }
+.stats-grid[data-count="2"] { grid-template-columns: repeat(2, 1fr); }
+.stats-grid[data-count="1"] { grid-template-columns: 1fr; }
+
 /* ── Stat card ────────────────────────────────────────────────────────────── */
 .stat-card {
   background: var(--bg-surface);
@@ -153,10 +158,12 @@
 
 /* ── Responsive ───────────────────────────────────────────────────────────── */
 @media (max-width: 1100px) {
-  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .stats-grid,
+  .stats-grid[data-count] { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 600px) {
-  .stats-grid { grid-template-columns: 1fr; }
+  .stats-grid,
+  .stats-grid[data-count] { grid-template-columns: 1fr; }
   .stat-card  { min-height: 130px; }
 }

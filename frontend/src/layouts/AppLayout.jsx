@@ -5,14 +5,16 @@ import AppNavbar from '../components/AppNavbar';
 import './AppLayout.css';
 
 const PATH_TO_NAV_ID = {
-  '/app/dashboard':       'dashboard',
-  '/app/simulations/new': 'new-simulation',
-  '/app/history':         'history',
-  '/app/gallery':         'gallery',
-  '/app/reports':         'saved-reports',
-  '/app/advisor':         'ai-advisor',
-  '/app/settings':        'settings',
-  '/app/profile':         'settings',
+  '/app/dashboard':           'dashboard',
+  '/app/simulations/new':     'new-simulation',
+  '/app/simulations/compare': 'new-simulation', // compare lives under simulations
+  '/app/history':             'history',
+  '/app/gallery':             'gallery',
+  '/app/reports':             'saved-reports',
+  '/app/advisor':             'ai-advisor',
+  '/app/settings':            'settings',
+  '/app/profile':             'settings',
+  '/app/admin':               'admin',
 };
 
 const NAV_ID_TO_PATH = {
@@ -23,19 +25,22 @@ const NAV_ID_TO_PATH = {
   'saved-reports':  '/app/reports',
   'ai-advisor':     '/app/advisor',
   'settings':       '/app/settings',
+  'admin':          '/app/admin',
   'landing':        '/',
   'sample-report':  '/simulations/sim_1/results',
 };
 
 const PATH_TO_TITLE = {
-  '/app/dashboard':       'Dashboard',
-  '/app/simulations/new': 'New Simulation',
-  '/app/history':         'Simulation History',
-  '/app/gallery':         'Community Gallery',
-  '/app/reports':         'Saved Reports',
-  '/app/advisor':         'AI Advisor',
-  '/app/settings':        'Settings',
-  '/app/profile':         'Profile',
+  '/app/dashboard':           'Dashboard',
+  '/app/simulations/new':     'New Simulation',
+  '/app/simulations/compare': 'Compare Simulations',
+  '/app/history':             'Simulation History',
+  '/app/gallery':             'Community Gallery',
+  '/app/reports':             'Saved Reports',
+  '/app/advisor':             'AI Advisor',
+  '/app/settings':            'Settings',
+  '/app/profile':             'Profile',
+  '/app/admin':               'Admin Analytics',
 };
 
 export default function AppLayout() {
@@ -89,14 +94,6 @@ export default function AppLayout() {
 
   return (
     <div className="app-layout">
-      {/* ── Desktop sidebar (always visible ≥ 769px) ────────────────────── */}
-      <Sidebar
-        activeItem={activeItem}
-        onNavigate={handleNavigate}
-        onGetStarted={handleGetStarted}
-        className="app-layout__sidebar--desktop"
-      />
-
       {/* ── Mobile drawer backdrop ───────────────────────────────────────── */}
       {drawerOpen && (
         <div
@@ -123,6 +120,7 @@ export default function AppLayout() {
           pageTitle={pageTitle}
           onMenuToggle={() => setDrawerOpen(v => !v)}
           menuOpen={drawerOpen}
+          activeItem={activeItem}
         />
         <div className="app-layout__page">
           <Outlet />

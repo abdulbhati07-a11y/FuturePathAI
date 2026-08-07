@@ -24,6 +24,8 @@ const admin_module_1 = require("./admin/admin.module");
 const analytics_module_1 = require("./analytics/analytics.module");
 const bullmq_1 = require("@nestjs/bullmq");
 const cache_manager_1 = require("@nestjs/cache-manager");
+const throttler_1 = require("@nestjs/throttler");
+const core_1 = require("@nestjs/core");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -33,6 +35,27 @@ exports.AppModule = AppModule = __decorate([
             config_1.ConfigModule.forRoot({
                 isGlobal: true,
                 envFilePath: '.env',
+            }),
+            throttler_1.ThrottlerModule.forRootAsync({
+                imports: [config_1.ConfigModule],
+                useFactory: (configService) => [
+                    {
+                        name: 'default',
+                        ttl: 60_000,
+                        limit: 120,
+                    },
+                    {
+                        name: 'ai-chat',
+                        ttl: 60_000,
+                        limit: 10,
+                    },
+                    {
+                        name: 'ai-topic',
+                        ttl: 60_000,
+                        limit: 20,
+                    },
+                ],
+                inject: [config_1.ConfigService],
             }),
             prisma_module_1.PrismaModule,
             bullmq_1.BullModule.forRootAsync({
@@ -75,7 +98,7 @@ exports.AppModule = AppModule = __decorate([
             analytics_module_1.AnalyticsModule,
         ],
         controllers: [app_controller_1.AppController],
-        providers: [app_service_1.AppService],
+        providers: [app_service_1.AppService, { provide: core_1.APP_GUARD, useClass: throttler_1.ThrottlerGuard }],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

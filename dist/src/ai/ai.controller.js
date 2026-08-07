@@ -14,6 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AiController = void 0;
 const common_1 = require("@nestjs/common");
+const throttler_1 = require("@nestjs/throttler");
 const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
 const class_transformer_1 = require("class-transformer");
@@ -91,16 +92,24 @@ let AiController = class AiController {
                     'How does this compare to alternatives?',
                     'What should I do next?',
                 ];
-                try {
-                    if (fullResponse) {
-                        const replies = await this.aiService.generateQuickReplies(fullResponse);
-                        if (replies && replies.length > 0) {
-                            dynamicSuggestions = replies;
+                const parsedOptions = fullResponse
+                    ? Array.from(fullResponse.matchAll(/^\s*([A-F])[).]\s+(.{1,80}?)\s*$/gm), (m) => m[2])
+                    : [];
+                if (parsedOptions.length >= 2) {
+                    dynamicSuggestions = parsedOptions.slice(0, 6);
+                }
+                else {
+                    try {
+                        if (fullResponse) {
+                            const replies = await this.aiService.generateQuickReplies(fullResponse);
+                            if (replies && replies.length > 0) {
+                                dynamicSuggestions = replies;
+                            }
                         }
                     }
-                }
-                catch (err) {
-                    console.error('Failed to generate dynamic suggestions:', err);
+                    catch (err) {
+                        console.error('Failed to generate dynamic suggestions:', err);
+                    }
                 }
                 if (!res.writableEnded) {
                     send('suggestions', dynamicSuggestions);
@@ -123,6 +132,7 @@ let AiController = class AiController {
 };
 exports.AiController = AiController;
 __decorate([
+    (0, throttler_1.SkipThrottle)(),
     (0, common_1.Get)('advisor-insight'),
     (0, swagger_1.ApiOperation)({ summary: 'Get current AI advisor insight' }),
     __metadata("design:type", Function),
@@ -130,6 +140,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], AiController.prototype, "getAdvisorInsight", null);
 __decorate([
+    (0, throttler_1.Throttle)({ 'ai-topic': { ttl: 60_000, limit: 20 } }),
     (0, common_1.Post)('generate-topic'),
     (0, swagger_1.ApiOperation)({ summary: 'Generate a simulation topic from a chat message' }),
     __param(0, (0, common_1.Body)('message')),
@@ -138,6 +149,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], AiController.prototype, "generateTopic", null);
 __decorate([
+    (0, throttler_1.Throttle)({ 'ai-chat': { ttl: 60_000, limit: 10 } }),
     (0, common_1.Post)('simulations/:id/chat'),
     (0, swagger_1.ApiOperation)({ summary: 'Stream AI chat for a simulation (SSE)' }),
     (0, swagger_1.ApiBody)({ type: ChatRequestDto }),

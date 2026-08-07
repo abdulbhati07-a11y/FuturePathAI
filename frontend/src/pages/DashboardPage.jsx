@@ -1,8 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import WelcomeHeader        from '../components/WelcomeHeader';
-import StatsGrid            from '../components/StatsGrid';
 import RecentSimulations    from '../components/RecentSimulations';
 import AdvisorPanel         from '../components/AdvisorPanel';
 import NotificationsDrawer  from '../components/NotificationsDrawer';
@@ -15,18 +14,25 @@ import {
   getSystemMeta,
 } from '../api/dashboard';
 import { realTimeSimulation } from '../services/realTimeSimulation';
+import '../components/Skeleton.css';
 import './DashboardPage.css';
+
+// Recharts (~500 kB) lives only inside these two components. Loading them
+// lazily keeps the chart library out of the dashboard's initial chunk, so the
+// shell + skeleton paint immediately and the charts stream in afterwards.
+const SpotlightHero = lazy(() => import('../components/SpotlightHero'));
+const StatsGrid     = lazy(() => import('../components/StatsGrid'));
 
 /* Skeleton rows shown while loading */
 function DashboardSkeleton() {
   return (
     <div className="dashboard-skeleton">
-      <div className="dashboard-skeleton__header" />
+      <div className="dashboard-skeleton__header skeleton" />
       <div className="dashboard-skeleton__stats">
-        {[0,1,2,3].map(i => <div key={i} className="dashboard-skeleton__stat-card" />)}
+        {[0,1,2,3].map(i => <div key={i} className="dashboard-skeleton__stat-card skeleton" />)}
       </div>
       <div className="dashboard-skeleton__sims">
-        {[0,1].map(i => <div key={i} className="dashboard-skeleton__sim-row" />)}
+        {[0,1].map(i => <div key={i} className="dashboard-skeleton__sim-row skeleton" />)}
       </div>
     </div>
   );
@@ -135,28 +141,47 @@ export default function DashboardPage() {
             onStart={() => navigate('/app/simulations/new')}
           />
         ) : (
-          /* ── Returning user — normal dashboard ────────────────────────── */
+          /* ── Returning user — spotlight hero + content ────────────────── */
           <>
-            <StatsGrid stats={stats} />
-            <RecentSimulations
-              simulations={simulations}
-              onViewAll={() => navigate('/app/history')}
-              onReview={(id) => navigate(`/simulations/${id}/results`)}
-              onStart={() => navigate('/app/simulations/new')}
-            />
+            <Suspense fallback={<div className="skeleton skeleton-chart" style={{ height: 220 }} />}>
+              <SpotlightHero
+                stats={stats}
+                advisor={advisor}
+                onDeepDive={() => navigate('/app/advisor')}
+              />
+            </Suspense>
+
+            {/* Path Alpha is featured in the SpotlightHero above, so hide its card here */}
+            <Suspense fallback={
+              <div className="dashboard-skeleton__stats" style={{ marginTop: '1.5rem' }}>
+                {[0,1,2].map(i => <div key={i} className="dashboard-skeleton__stat-card skeleton" />)}
+              </div>
+            }>
+              <StatsGrid stats={stats} exclude={['pathAlpha']} />
+            </Suspense>
+
+            <div className="dashboard-page__grid">
+              <div className="dashboard-page__grid-main">
+                <RecentSimulations
+                  simulations={simulations}
+                  onViewAll={() => navigate('/app/history')}
+                  onReview={(id) => navigate(`/simulations/${id}/results`)}
+                  onStart={() => navigate('/app/simulations/new')}
+                />
+              </div>
+
+              <div className="dashboard-page__grid-side">
+                <AdvisorPanel
+                  advisor={advisor}
+                  correlations={correlations}
+                  meta={meta}
+                  onDeepDive={() => navigate('/app/advisor')}
+                />
+              </div>
+            </div>
           </>
         )}
       </main>
-
-      {/* Advisor panel — shown only when user has data */}
-      {!isNewUser && (
-        <AdvisorPanel
-          advisor={advisor}
-          correlations={correlations}
-          meta={meta}
-          onDeepDive={() => navigate('/app/advisor')}
-        />
-      )}
 
       <NotificationsDrawer open={notifOpen} onClose={() => setNotifOpen(false)} />
     </div>

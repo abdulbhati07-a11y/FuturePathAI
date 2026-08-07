@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Param, Body, Res } from '@nestjs/common';
+import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { IsOptional, IsString, IsArray, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -34,12 +35,14 @@ class ChatRequestDto {
 export class AiController {
   constructor(private readonly aiService: AiService) {}
 
+  @SkipThrottle()
   @Get('advisor-insight')
   @ApiOperation({ summary: 'Get current AI advisor insight' })
   getAdvisorInsight() {
     return this.aiService.getAdvisorInsight();
   }
 
+  @Throttle({ 'ai-topic': { ttl: 60_000, limit: 20 } })
   @Post('generate-topic')
   @ApiOperation({ summary: 'Generate a simulation topic from a chat message' })
   generateTopic(@Body('message') message: string) {
@@ -59,6 +62,7 @@ export class AiController {
    *   { type: 'done',        value: '' }
    *   { type: 'error',       value: '<message>' }
    */
+  @Throttle({ 'ai-chat': { ttl: 60_000, limit: 10 } })
   @Post('simulations/:id/chat')
   @ApiOperation({ summary: 'Stream AI chat for a simulation (SSE)' })
   @ApiBody({ type: ChatRequestDto })
@@ -105,23 +109,38 @@ export class AiController {
           send(event.data.type, event.data.value);
         }
 
-        // Generate dynamic suggestions based on the AI's full response
+        // Generate dynamic suggestions based on the AI's full response.
+        //
+        // Fast path: the simulation system prompt makes the AI end questions
+        // with lettered options ("A) Under 3 months"). Parse those directly —
+        // they ARE the suggestions — and skip the extra AI round-trip that
+        // used to add ~2s of dead air after every turn.
         let dynamicSuggestions = [
           'Tell me more about the risks',
           'What is the best-case scenario?',
           'How does this compare to alternatives?',
           'What should I do next?',
         ];
-        try {
-          if (fullResponse) {
-            const replies =
-              await this.aiService.generateQuickReplies(fullResponse);
-            if (replies && replies.length > 0) {
-              dynamicSuggestions = replies;
+        const parsedOptions = fullResponse
+          ? Array.from(
+              fullResponse.matchAll(/^\s*([A-F])[).]\s+(.{1,80}?)\s*$/gm),
+              (m) => m[2],
+            )
+          : [];
+        if (parsedOptions.length >= 2) {
+          dynamicSuggestions = parsedOptions.slice(0, 6);
+        } else {
+          try {
+            if (fullResponse) {
+              const replies =
+                await this.aiService.generateQuickReplies(fullResponse);
+              if (replies && replies.length > 0) {
+                dynamicSuggestions = replies;
+              }
             }
+          } catch (err) {
+            console.error('Failed to generate dynamic suggestions:', err);
           }
-        } catch (err) {
-          console.error('Failed to generate dynamic suggestions:', err);
         }
 
         // Post-stream: send suggestions + insight panel update

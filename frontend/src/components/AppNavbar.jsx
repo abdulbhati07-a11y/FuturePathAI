@@ -4,6 +4,7 @@ import {
   Bell, Search, ChevronDown, LogOut, Settings, User,
   Sparkles, Plus, X, Check, Moon, Sun,
   FileText, History, ArrowRight, Loader2, Menu,
+  LayoutGrid, FilePlus2, BookMarked, Globe
 } from 'lucide-react';
 import { useAuth }         from '../context/AuthContext';
 import { useTheme }        from '../context/ThemeContext';
@@ -16,11 +17,22 @@ const MOCK_NOTIFICATIONS = [
   { id: 'n3', type: 'warning', title: 'Action Required',     body: 'Primary Residence Pivot needs your input.', time: '3h ago', read: true },
 ];
 
-export default function AppNavbar({ pageTitle, onMenuToggle, menuOpen }) {
+const APP_NAV_ITEMS = [
+  { id: 'home',           label: 'Home',          path: '/' },
+  { id: 'dashboard',      label: 'Dashboard',     path: '/app/dashboard' },
+  { id: 'new-simulation', label: 'Chat',          path: '/app/simulations/new' },
+  { id: 'history',        label: 'History',       path: '/app/history' },
+  { id: 'saved-reports',  label: 'Reports',       path: '/app/reports' },
+  { id: 'gallery',        label: 'Gallery',       path: '/app/gallery' },
+  { id: 'ai-advisor',     label: 'AI Advisor',    path: '/app/advisor' },
+];
+
+export default function AppNavbar({ pageTitle, onMenuToggle, menuOpen, activeItem }) {
   const navigate  = useNavigate();
   const location  = useLocation();
-  const { user, logout }      = useAuth();
+  const { user, logout, token } = useAuth();
   const { theme, toggleTheme } = useTheme();
+
 
   // ── Notifications ──────────────────────────────────────────────────────────
   const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
@@ -177,7 +189,23 @@ export default function AppNavbar({ pageTitle, onMenuToggle, menuOpen }) {
             : <Menu size={20} strokeWidth={2} />
           }
         </button>
-        <h2 className="app-navbar__page-title">{pageTitle || 'Dashboard'}</h2>
+        <div className="app-navbar__brand-mobile">
+          <Sparkles size={16} strokeWidth={2} />
+        </div>
+        
+        {/* Desktop Navigation Links */}
+        <nav className="app-navbar__desktop-nav" aria-label="Main navigation">
+          {APP_NAV_ITEMS.map(({ id, label, path }) => (
+            <button
+              key={id}
+              type="button"
+              className={`app-navbar__nav-item ${activeItem === id ? 'is-active' : ''}`}
+              onClick={() => navigate(path)}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
       </div>
 
       {/* Center — search */}
@@ -294,96 +322,109 @@ export default function AppNavbar({ pageTitle, onMenuToggle, menuOpen }) {
           {theme === 'light' ? <Moon size={17} strokeWidth={2} /> : <Sun size={17} strokeWidth={2} />}
         </button>
 
-        {/* New Simulation */}
-        <button type="button" className="app-navbar__new-btn"
-          onClick={() => navigate('/app/simulations/new')}>
-          <Plus size={14} strokeWidth={2.5} />
-          <span>New Simulation</span>
-        </button>
+        {token ? (
+          <>
+            {/* New Simulation */}
+            <button type="button" className="app-navbar__new-btn"
+              onClick={() => navigate('/app/simulations/new')}>
+              <Plus size={14} strokeWidth={2.5} />
+              <span>New Simulation</span>
+            </button>
 
-        {/* Notifications */}
-        <div className="app-navbar__notif-wrap" ref={notifRef}>
-          <button type="button" className="app-navbar__icon-btn"
-            aria-label={`Notifications${unreadCount ? ` (${unreadCount} unread)` : ''}`}
-            onClick={() => { setNotifOpen(v => !v); setProfileOpen(false); }}>
-            <Bell size={17} strokeWidth={2} />
-            {unreadCount > 0 && <span className="app-navbar__badge">{unreadCount}</span>}
-          </button>
+            {/* Notifications */}
+            <div className="app-navbar__notif-wrap" ref={notifRef}>
+              <button type="button" className="app-navbar__icon-btn"
+                aria-label={`Notifications${unreadCount ? ` (${unreadCount} unread)` : ''}`}
+                onClick={() => { setNotifOpen(v => !v); setProfileOpen(false); }}>
+                <Bell size={17} strokeWidth={2} />
+                {unreadCount > 0 && <span className="app-navbar__badge">{unreadCount}</span>}
+              </button>
 
-          {notifOpen && (
-            <div className="app-navbar__dropdown app-navbar__dropdown--notif">
-              <div className="app-navbar__dropdown-head">
-                <span className="app-navbar__dropdown-title">Notifications</span>
-                {unreadCount > 0 && (
-                  <button type="button" className="app-navbar__mark-all" onClick={markAllRead}>
-                    <Check size={12} strokeWidth={2.5} /> Mark all read
-                  </button>
-                )}
-              </div>
-              <div className="app-navbar__notif-list">
-                {notifications.map(n => (
-                  <div key={n.id}
-                    className={`app-navbar__notif-item ${!n.read ? 'is-unread' : ''} notif-type--${n.type}`}
-                    onClick={() => markRead(n.id)} role="button" tabIndex={0}
-                    onKeyDown={e => e.key === 'Enter' && markRead(n.id)}>
-                    <div className="app-navbar__notif-dot" />
-                    <div className="app-navbar__notif-body">
-                      <p className="app-navbar__notif-title">{n.title}</p>
-                      <p className="app-navbar__notif-text">{n.body}</p>
-                      <span className="app-navbar__notif-time">{n.time}</span>
+              {notifOpen && (
+                <div className="app-navbar__dropdown app-navbar__dropdown--notif">
+                  <div className="app-navbar__dropdown-head">
+                    <span className="app-navbar__dropdown-title">Notifications</span>
+                    {unreadCount > 0 && (
+                      <button type="button" className="app-navbar__mark-all" onClick={markAllRead}>
+                        <Check size={12} strokeWidth={2.5} /> Mark all read
+                      </button>
+                    )}
+                  </div>
+                  <div className="app-navbar__notif-list">
+                    {notifications.map(n => (
+                      <div key={n.id}
+                        className={`app-navbar__notif-item ${!n.read ? 'is-unread' : ''} notif-type--${n.type}`}
+                        onClick={() => markRead(n.id)} role="button" tabIndex={0}
+                        onKeyDown={e => e.key === 'Enter' && markRead(n.id)}>
+                        <div className="app-navbar__notif-dot" />
+                        <div className="app-navbar__notif-body">
+                          <p className="app-navbar__notif-title">{n.title}</p>
+                          <p className="app-navbar__notif-text">{n.body}</p>
+                          <span className="app-navbar__notif-time">{n.time}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Profile */}
+            <div className="app-navbar__profile-wrap" ref={profileRef}>
+              <button type="button" className="app-navbar__profile-btn"
+                onClick={() => { setProfileOpen(v => !v); setNotifOpen(false); }}
+                aria-expanded={profileOpen}>
+                <div className="app-navbar__avatar">{initials}</div>
+                <span className="app-navbar__profile-name">{firstName}</span>
+                <ChevronDown size={13} strokeWidth={2.5}
+                  className={`app-navbar__chevron ${profileOpen ? 'is-open' : ''}`} />
+              </button>
+
+              {profileOpen && (
+                <div className="app-navbar__dropdown app-navbar__dropdown--profile">
+                  <div className="app-navbar__profile-info">
+                    <div className="app-navbar__avatar app-navbar__avatar--lg">{initials}</div>
+                    <div>
+                      <p className="app-navbar__profile-full">{user?.name || firstName}</p>
+                      <p className="app-navbar__profile-email">{user?.email || ''}</p>
+                      {user?.roles?.includes('PREMIUM') && (
+                        <span className="app-navbar__role-badge app-navbar__role-badge--premium">
+                          <Sparkles size={10} strokeWidth={2} /> Premium
+                        </span>
+                      )}
+                      {user?.roles?.includes('ADMIN') && (
+                        <span className="app-navbar__role-badge app-navbar__role-badge--admin">Admin</span>
+                      )}
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Profile */}
-        <div className="app-navbar__profile-wrap" ref={profileRef}>
-          <button type="button" className="app-navbar__profile-btn"
-            onClick={() => { setProfileOpen(v => !v); setNotifOpen(false); }}
-            aria-expanded={profileOpen}>
-            <div className="app-navbar__avatar">{initials}</div>
-            <span className="app-navbar__profile-name">{firstName}</span>
-            <ChevronDown size={13} strokeWidth={2.5}
-              className={`app-navbar__chevron ${profileOpen ? 'is-open' : ''}`} />
-          </button>
-
-          {profileOpen && (
-            <div className="app-navbar__dropdown app-navbar__dropdown--profile">
-              <div className="app-navbar__profile-info">
-                <div className="app-navbar__avatar app-navbar__avatar--lg">{initials}</div>
-                <div>
-                  <p className="app-navbar__profile-full">{user?.name || firstName}</p>
-                  <p className="app-navbar__profile-email">{user?.email || ''}</p>
-                  {user?.roles?.includes('PREMIUM') && (
-                    <span className="app-navbar__role-badge app-navbar__role-badge--premium">
-                      <Sparkles size={10} strokeWidth={2} /> Premium
-                    </span>
-                  )}
-                  {user?.roles?.includes('ADMIN') && (
-                    <span className="app-navbar__role-badge app-navbar__role-badge--admin">Admin</span>
-                  )}
+                  <div className="app-navbar__dropdown-divider" />
+                  <button type="button" className="app-navbar__menu-item"
+                    onClick={() => { setProfileOpen(false); navigate('/app/profile'); }}>
+                    <User size={15} strokeWidth={2} /> Profile
+                  </button>
+                  <button type="button" className="app-navbar__menu-item"
+                    onClick={() => { setProfileOpen(false); navigate('/app/settings'); }}>
+                    <Settings size={15} strokeWidth={2} /> Settings
+                  </button>
+                  <div className="app-navbar__dropdown-divider" />
+                  <button type="button" className="app-navbar__menu-item app-navbar__menu-item--danger"
+                    onClick={handleLogout}>
+                    <LogOut size={15} strokeWidth={2} /> Sign Out
+                  </button>
                 </div>
-              </div>
-              <div className="app-navbar__dropdown-divider" />
-              <button type="button" className="app-navbar__menu-item"
-                onClick={() => { setProfileOpen(false); navigate('/app/profile'); }}>
-                <User size={15} strokeWidth={2} /> Profile
-              </button>
-              <button type="button" className="app-navbar__menu-item"
-                onClick={() => { setProfileOpen(false); navigate('/app/settings'); }}>
-                <Settings size={15} strokeWidth={2} /> Settings
-              </button>
-              <div className="app-navbar__dropdown-divider" />
-              <button type="button" className="app-navbar__menu-item app-navbar__menu-item--danger"
-                onClick={handleLogout}>
-                <LogOut size={15} strokeWidth={2} /> Sign Out
-              </button>
+              )}
             </div>
-          )}
-        </div>
+          </>
+        ) : (
+          <>
+            <button type="button" className="app-navbar__signin-btn" onClick={() => navigate('/login')}>
+              Sign In
+            </button>
+            <button type="button" className="app-navbar__new-btn" onClick={() => navigate('/register')}>
+              <span>Get Started</span>
+            </button>
+          </>
+        )}
       </div>
     </header>
   );

@@ -20,10 +20,16 @@ const SIMULATION_SYSTEM_PROMPT = `You are FuturePath AI — an expert decision i
 Your role is to guide users through structured life-decision simulations.
 
 BEHAVIOR:
-- Ask one focused question at a time to gather the information needed to model the user's decision.
+- Ask ONE focused question at a time to gather the information needed to model the user's decision.
 - Each question should dig deeper into a specific dimension: financial impact, risk tolerance, timelines, personal values, alternatives considered, or emotional readiness.
-- Keep your responses concise (2–4 sentences max per turn).
+- EVERY question you ask MUST end with 3–4 concrete answer options the user can pick from, formatted as a short lettered list (A), B), C), D)). Make the options specific and mutually exclusive, covering the realistic range — e.g. concrete amounts ("Under $5k", "$5k–$20k", "Over $20k"), timeframes, or clear stances. The user can always type their own answer instead.
+- Keep your responses concise (2–4 sentences plus the options list).
 - After 4–5 exchanges you should have enough data to synthesize a recommendation.
+
+WHEN GIVING ADVICE OR A RECOMMENDATION, BE PRECISE:
+- Commit to ONE clear verdict first ("Do X"), then justify it — never a menu of equally-weighted choices.
+- Quantify everything you can: percentages, dollar amounts in USD, timeframes, success probabilities ("~70% likely"). Prefer "save 6 months of expenses (~$15k)" over "save some money".
+- Name the single biggest risk and the single condition under which your verdict would flip.
 - When you have gathered enough context, proactively summarize with: "Based on what you've shared, I'm ready to generate your full simulation report. Type 'generate report' or click View Results when ready."
 
 TONE: Direct, data-driven, empathetic. No filler words.
@@ -86,13 +92,18 @@ let AiService = class AiService {
         for await (const chunk of tokenStream) {
             yield { data: { type: 'token', value: chunk } };
         }
+        const answeredTurns = Array.isArray(payload)
+            ? payload.filter((m) => m.role === 'user').length
+            : 1;
+        const confidence = Math.min(55 + answeredTurns * 8, 95);
+        const riskLevel = Math.max(72 - answeredTurns * 5, 40);
         yield {
             data: {
                 type: 'metrics',
                 value: JSON.stringify({
-                    riskLevel: Math.floor(Math.random() * 40) + 40,
-                    confidence: Math.floor(Math.random() * 20) + 75,
-                    projectedValue: Math.floor(Math.random() * 500_000) + 1_000_000,
+                    riskLevel,
+                    confidence,
+                    answeredTurns,
                 }),
             },
         };
