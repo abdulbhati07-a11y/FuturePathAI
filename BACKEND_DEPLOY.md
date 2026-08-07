@@ -55,8 +55,8 @@ image, runs database migrations, and starts the API automatically.
 
    | Variable | Value |
    |----------|-------|
-   | `DATABASE_URL` | Your MySQL URL from Step 1 |
-   | `DATABASE_SSL` | `true` (TiDB/Aiven need TLS) |
+   | `DATABASE_URL` | Your MySQL URL — **cloud TLS providers must append `?sslaccept=strict`** (the migrate CLI reads TLS from the URL). e.g. `mysql://USER.root:PASS@gateway01.<region>.prod.aws.tidbcloud.com:4000/futurepath?sslaccept=strict` |
+   | `DATABASE_SSL` | `true` (TiDB/Aiven need TLS at runtime too) |
    | `CORS_ORIGINS` | Your Cloudflare Pages URL, e.g. `https://futurepath-ai.pages.dev` |
    | `OPENCODEZEN_API_KEY` | Your OpenCodeZen key |
 
@@ -68,6 +68,10 @@ On boot the container runs `prisma migrate deploy` (creating all tables) then
 seeds two demo logins:
 - `admin@futurepath.ai` / `admin123`
 - `user@futurepath.ai` / `user123`
+
+> **Note:** if the tables were already migrated ahead of time (e.g. run manually
+> against the cloud DB), `prisma migrate deploy` simply finds nothing pending and
+> continues — it's idempotent, so re-running on every deploy is safe.
 
 > **Change these credentials** before sharing the app publicly.
 
