@@ -1,0 +1,17 @@
+# Never ship secrets or local artifacts into the image
+.env
+.env.*
+node_modules
+dist
+coverage
+frontend
+
+# VCS / editor / OS noise
+.git
+.gitignore
+*.log
+.DS_Store
+
+# Docs & deploy metadata (not needed at runtime)
+*.md
+render.yaml

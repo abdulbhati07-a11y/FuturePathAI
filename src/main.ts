@@ -17,7 +17,29 @@ async function bootstrap() {
 
   // Security
   app.use(helmet());
-  app.enableCors();
+
+  // CORS — lock to an explicit allowlist in production. CORS_ORIGINS is a
+  // comma-separated list of allowed origins (e.g. the Cloudflare Pages URL and
+  // any custom domain). When it's unset we fall back to allowing everything,
+  // which is fine for local dev but should never be the case in production.
+  const corsOrigins = (process.env.CORS_ORIGINS || '')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+
+  if (corsOrigins.length > 0) {
+    app.enableCors({
+      origin: corsOrigins,
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    });
+    winstonLogger.log(`CORS restricted to: ${corsOrigins.join(', ')}`);
+  } else {
+    app.enableCors();
+    winstonLogger.warn(
+      'CORS_ORIGINS is not set — allowing all origins. Set it in production.',
+    );
+  }
 
   // Global Pipes & Filters
   app.useGlobalPipes(
@@ -63,12 +85,10 @@ async function bootstrap() {
     winstonLogger.log('Seeded initial mock users.');
   }
 
-  // Start app
+  // Start app — bind to 0.0.0.0 so cloud hosts (Render/Railway/Fly) can route
+  // traffic to the container. PORT is injected by the platform.
   const port = process.env.PORT || 3000;
-  await app.listen(port);
-  winstonLogger.log(`Application is running on: http://localhost:${port}`);
-  winstonLogger.log(
-    `Swagger docs available at: http://localhost:${port}/api/docs`,
-  );
+  await app.listen(port, '0.0.0.0');
+  winstonLogger.log(`Application is running on port ${port}`);
 }
 bootstrap();

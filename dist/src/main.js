@@ -52,7 +52,22 @@ async function bootstrap() {
         logger: logger_config_1.winstonLogger,
     });
     app.use((0, helmet_1.default)());
-    app.enableCors();
+    const corsOrigins = (process.env.CORS_ORIGINS || '')
+        .split(',')
+        .map((o) => o.trim())
+        .filter(Boolean);
+    if (corsOrigins.length > 0) {
+        app.enableCors({
+            origin: corsOrigins,
+            credentials: true,
+            methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+        });
+        logger_config_1.winstonLogger.log(`CORS restricted to: ${corsOrigins.join(', ')}`);
+    }
+    else {
+        app.enableCors();
+        logger_config_1.winstonLogger.warn('CORS_ORIGINS is not set — allowing all origins. Set it in production.');
+    }
     app.useGlobalPipes(new common_1.ValidationPipe({
         whitelist: true,
         forbidNonWhitelisted: true,
@@ -89,9 +104,8 @@ async function bootstrap() {
         logger_config_1.winstonLogger.log('Seeded initial mock users.');
     }
     const port = process.env.PORT || 3000;
-    await app.listen(port);
-    logger_config_1.winstonLogger.log(`Application is running on: http://localhost:${port}`);
-    logger_config_1.winstonLogger.log(`Swagger docs available at: http://localhost:${port}/api/docs`);
+    await app.listen(port, '0.0.0.0');
+    logger_config_1.winstonLogger.log(`Application is running on port ${port}`);
 }
 bootstrap();
 //# sourceMappingURL=main.js.map
