@@ -286,10 +286,10 @@ Return ONLY a JSON array, no markdown blocks:
     }`;
 
     try {
-      // The full report is the one deep-analysis task where the model's hidden
-      // reasoning measurably improves scenario quality — worth the extra time.
+      // Disabled reasoning to ensure the response returns well under Render's 
+      // 100-second idle timeout limit, preventing "Network Error" connection drops.
       const content = await this.callOpenCodeZen(prompt, undefined, {
-        reasoning: true,
+        reasoning: false,
       });
       const cleaned = content.replace(/```json/g, '').replace(/```/g, '');
       return JSON.parse(cleaned);

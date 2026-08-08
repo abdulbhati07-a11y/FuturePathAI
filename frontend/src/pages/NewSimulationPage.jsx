@@ -322,6 +322,22 @@ export default function NewSimulationPage() {
     if (!simulationId) return;
     setIsGenerating(true);
     try {
+      // 0. Persist the real conversation so BOTH the decision-engine scores and
+      //    the AI report are grounded in what the user actually said (not an
+      //    empty {}). Drop error/interrupted bubbles — only genuine turns.
+      const conversation = messages
+        .filter(
+          (m) =>
+            (m.role === 'user' || m.role === 'assistant') &&
+            m.content &&
+            !m.interrupted &&
+            !m.id?.startsWith('err_') &&
+            !m.id?.startsWith('retry_'),
+        )
+        .map((m) => ({ role: m.role, content: m.content }));
+      await apiClient.patch(`/simulations/${simulationId}`, {
+        answers: { conversation },
+      });
       // 1. Run the decision engine to compute scores
       await apiClient.post(`/simulations/${simulationId}/analyze`);
       // 2. Generate the AI report

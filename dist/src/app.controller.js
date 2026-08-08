@@ -13,6 +13,7 @@ exports.AppController = void 0;
 const common_1 = require("@nestjs/common");
 const app_service_1 = require("./app.service");
 const public_decorator_1 = require("./common/decorators/public.decorator");
+const throttler_1 = require("@nestjs/throttler");
 let AppController = class AppController {
     appService;
     constructor(appService) {
@@ -25,6 +26,7 @@ let AppController = class AppController {
 exports.AppController = AppController;
 __decorate([
     (0, public_decorator_1.Public)(),
+    (0, throttler_1.SkipThrottle)(),
     (0, common_1.Get)(),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),

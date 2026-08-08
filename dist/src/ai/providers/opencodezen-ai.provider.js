@@ -258,7 +258,7 @@ Return ONLY a JSON array, no markdown blocks:
     }`;
         try {
             const content = await this.callOpenCodeZen(prompt, undefined, {
-                reasoning: true,
+                reasoning: false,
             });
             const cleaned = content.replace(/```json/g, '').replace(/```/g, '');
             return JSON.parse(cleaned);
