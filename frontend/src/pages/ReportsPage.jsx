@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookMarked, FileText, Download, ExternalLink, RefreshCw, AlertCircle } from 'lucide-react';
-import { supabase } from '../api/supabase';
+import { apiClient } from '../api/client';
 import { useToast }  from '../context/ToastContext';
 import './ReportsPage.css';
 
-// Map a simulation from the API into a report shape
 function mapReport(sim) {
   return {
     id:         `rep_${sim.id}`,
@@ -34,21 +33,14 @@ export default function ReportsPage() {
     setLoading(true);
     setError('');
     try {
-      const { data, error } = await supabase
-        .from('simulations')
-        .select('*')
-        .eq('status', 'COMPLETED')
-        .order('updated_at', { ascending: false })
-        .limit(20);
-      if (error) throw error;
-      setReports((data || []).map(mapReport));
+      const raw = await apiClient.get('/simulations?status=COMPLETED&limit=20');
+      const list = Array.isArray(raw) ? raw : (raw?.data ?? raw?.items ?? []);
+      setReports(list.map(mapReport));
     } catch (err) {
-      // Graceful fallback: show static mocks so the page isn't blank
       setReports([
         { id: 'rep_1', simId: 'sim_1', title: 'Series C Equity Liquidate', date: 'Oct 12, 2024', confidence: 98.2, risk: 'Low',    category: 'Investment' },
         { id: 'rep_2', simId: 'sim_2', title: 'Primary Residence Pivot',   date: 'Oct 09, 2024', confidence: 76.4, risk: 'Medium', category: 'Relocation' },
       ]);
-      setError('');
     } finally {
       setLoading(false);
     }

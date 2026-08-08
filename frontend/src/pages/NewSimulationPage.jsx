@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { supabase } from '../api/supabase';
+import { apiClient } from '../api/client';
 import ChatMessage from '../components/chat/ChatMessage';
 import ChatComposer from '../components/chat/ChatComposer';
 import LiveInsightPanel from '../components/chat/LiveInsightPanel';
@@ -324,67 +324,17 @@ export default function NewSimulationPage() {
     if (!simulationId) return;
     setIsGenerating(true);
     try {
-      // 0. Extract conversation
-      const conversation = messages
-        .filter(
-          (m) =>
-            (m.role === 'user' || m.role === 'assistant') &&
-            m.content &&
-            !m.interrupted &&
-            !m.id?.startsWith('err_') &&
-            !m.id?.startsWith('retry_'),
-        )
-        .map((m) => ({ role: m.role, content: m.content }));
+      // 1. Run the decision engine to compute scores
+      await apiClient.post(`/simulations/${simulationId}/analyze`);
 
-      // 1. Generate the AI report via Vercel Function
-      const repRes = await fetch('/api/generate-report', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          title: simTitle, 
-          category: simCategory, 
-          answers: { conversation },
-          context: user?.profile
-        })
-      });
-      if (!repRes.ok) throw new Error('Failed to generate report from AI');
-      const aiReport = await repRes.json();
+      // 2. Generate the AI report via the backend
+      try {
+        await apiClient.post(`/reports/generate/${simulationId}`);
+      } catch {
+        // Report generation is best-effort — proceed to results even if it fails
+      }
 
-      // 2. Compute deterministic scores (simplified logic)
-      const userTurns = conversation.filter(m => m.role === 'user').length;
-      const confidence = Math.min(55 + (userTurns * 8), 95);
-      const risk = Math.max(72 - (userTurns * 5), 40);
-      const decision = Math.min(100 - (risk * 0.5) + ((confidence - 70) * 0.3), 99);
-
-      // 3. Update simulation
-      const { error: simErr } = await supabase
-        .from('simulations')
-        .update({
-          status: 'COMPLETED',
-          answers: { conversation },
-          decision_score: decision,
-          risk_score: risk,
-          confidence_score: confidence,
-        })
-        .eq('id', simulationId);
-      if (simErr) throw simErr;
-
-      // 4. Create report record
-      const { data: { session } } = await supabase.auth.getSession();
-      const { error: repDbErr } = await supabase
-        .from('reports')
-        .insert({
-          simulation_id: simulationId,
-          user_id: session.user.id,
-          summary: aiReport.mostLikely?.description || 'AI Generated Report',
-          chart_data: [{ chartType: 'line', title: 'Financial Projections', labels: ['Y1','Y2','Y3','Y4','Y5'], series: [{ name: 'Projected', data: [100,150,200,280,400] }] }],
-          timeline: aiReport.timeline || [],
-          scores: { decision, risk, confidence },
-          recommendations: aiReport
-        });
-      if (repDbErr) throw repDbErr;
-
-      // 5. Navigate
+      // 3. Navigate to results
       localStorage.removeItem('fp_sim_draft');
       navigate(`/simulations/${simulationId}/results`);
     } catch (err) {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { supabase } from '../api/supabase';
+import { apiClient } from '../api/client';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid, Legend,
@@ -34,15 +34,17 @@ export default function AdminAnalyticsPage() {
 
     async function load() {
       try {
-        const [{ data: sims }, { data: usersData }] = await Promise.all([
-          supabase.from('simulations').select('*', { count: 'exact' }),
-          supabase.from('users').select('*'),
+        const [simsRaw, usersRaw] = await Promise.all([
+          apiClient.get('/simulations?limit=500'),
+          apiClient.get('/admin/users'),
         ]);
-        const totalSims = sims?.length ?? 0;
-        const completed = sims?.filter(s => s.status === 'COMPLETED').length ?? 0;
-        const avgRisk = totalSims ? Math.round(sims.reduce((a, s) => a + (s.risk_score || 0), 0) / totalSims) : 0;
-        setAnalytics({ totalSimulations: totalSims, completedSimulations: completed, averageRisk: avgRisk, totalUsers: usersData?.length ?? 0 });
-        setUsers(usersData || []);
+        const sims = Array.isArray(simsRaw) ? simsRaw : (simsRaw?.data ?? []);
+        const usersData = Array.isArray(usersRaw) ? usersRaw : (usersRaw?.data ?? []);
+        const totalSims = sims.length;
+        const completed = sims.filter(s => s.status === 'COMPLETED').length;
+        const avgRisk = totalSims ? Math.round(sims.reduce((a, s) => a + (s.riskScore || 0), 0) / totalSims) : 0;
+        setAnalytics({ totalSimulations: totalSims, completedSimulations: completed, averageRisk: avgRisk, totalUsers: usersData.length });
+        setUsers(usersData);
         setStatus('ready');
       } catch (err) {
         setError(err.message || 'Failed to load admin data.');

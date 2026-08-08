@@ -1,109 +1,93 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { supabase } from '../api/supabase';
 
 const AuthContext = createContext(null);
 
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
-  const [loading, setLoading] = useState(true);
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 
+export function AuthProvider({ children }) {
+  const [user,    setUser]    = useState(null);
+  const [token,   setToken]   = useState(() => localStorage.getItem('accessToken'));
+  const [loading, setLoading] = useState(true);
   const navigateRef = useRef(null);
 
-  // Initialize session and listen for auth changes
+  // Validate stored token on mount
   useEffect(() => {
-    let mounted = true;
-
-    async function getInitialSession() {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) throw error;
-        
-        if (session && mounted) {
-          await fetchUserProfile(session);
-        } else if (mounted) {
-          setLoading(false);
-        }
-      } catch (err) {
-        console.error("Auth init error:", err);
-        if (mounted) setLoading(false);
-      }
-    }
-
-    getInitialSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (!session) {
-        setUser(null);
-        setToken(null);
-        setLoading(false);
-      } else {
-        await fetchUserProfile(session);
-      }
-    });
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
+    if (!token) { setLoading(false); return; }
+    fetchMe(token);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function fetchUserProfile(session) {
+  async function fetchMe(tk) {
     try {
-      setToken(session.access_token);
-      // Ensure user is in our public.users table via trigger, then fetch profile
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
-        
-      if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found, which might happen if trigger is delayed
-        console.error("Failed to fetch user profile:", error);
-      }
-
-      setUser({
-        ...session.user,
-        // merge public.users data
-        roles: data?.roles || ['USER'],
-        name: data?.name || session.user.user_metadata?.name || 'User',
-        profile: data?.profile || null
+      const res = await fetch(`${BASE_URL}/users/me`, {
+        headers: { Authorization: `Bearer ${tk}` },
       });
-    } catch (err) {
-      console.error(err);
+      if (!res.ok) throw new Error('Unauthorized');
+      const body = await res.json();
+      setUser(body.data ?? body);
+    } catch {
+      localStorage.removeItem('accessToken');
+      setToken(null);
+      setUser(null);
     } finally {
       setLoading(false);
     }
   }
 
-  // Auth actions
+  // Listen for 401 events fired by apiClient
+  useEffect(() => {
+    function onUnauthorized() {
+      localStorage.removeItem('accessToken');
+      setToken(null);
+      setUser(null);
+      if (navigateRef.current) {
+        navigateRef.current('/login', { replace: true });
+      } else {
+        window.location.href = '/login';
+      }
+    }
+    window.addEventListener('auth:unauthorized', onUnauthorized);
+    return () => window.removeEventListener('auth:unauthorized', onUnauthorized);
+  }, []);
+
   const login = useCallback(async (email, password) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+    const res = await fetch(`${BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
     });
-    if (error) throw new Error(error.message);
-    return data;
+    const body = await res.json();
+    if (!res.ok || body.success === false) {
+      throw new Error(body.message || 'Login failed');
+    }
+    const { accessToken, user: userData } = body.data ?? body;
+    localStorage.setItem('accessToken', accessToken);
+    setToken(accessToken);
+    setUser(userData);
+    return userData;
   }, []);
 
   const register = useCallback(async (name, email, password) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          name,
-        },
-      },
+    const res = await fetch(`${BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password }),
     });
-    if (error) throw new Error(error.message);
-    return data;
+    const body = await res.json();
+    if (!res.ok || body.success === false) {
+      throw new Error(body.message || 'Registration failed');
+    }
+    const { accessToken, user: userData } = body.data ?? body;
+    localStorage.setItem('accessToken', accessToken);
+    setToken(accessToken);
+    setUser(userData);
+    return userData;
   }, []);
 
-  const logout = useCallback(async (redirectPath = '/login') => {
-    await supabase.auth.signOut();
-    setUser(null);
+  const logout = useCallback((redirectPath = '/login') => {
+    localStorage.removeItem('accessToken');
     setToken(null);
+    setUser(null);
     if (navigateRef.current) {
       navigateRef.current(redirectPath, { replace: true });
     }
