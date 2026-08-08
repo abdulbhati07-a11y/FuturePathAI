@@ -1,4 +1,7 @@
-.reports-page { padding: 28px 32px; max-width: 900px; }
+.reports-page {
+  padding: 28px 32px;
+  max-width: 900px;
+}
 
 .reports-page__header {
   display: flex;
@@ -42,7 +45,12 @@
   color: var(--text-tertiary);
 }
 
-.reports-page__empty p { font-size: 14px; margin: 0; text-align: center; max-width: 320px; }
+.reports-page__empty p {
+  font-size: 14px;
+  margin: 0;
+  text-align: center;
+  max-width: 320px;
+}
 
 .reports-page__cta {
   background: var(--color-primary);
@@ -57,9 +65,17 @@
   transition: background-color 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-.reports-page__cta:hover { background: var(--color-primary-hover); box-shadow: 0 4px 14px var(--color-primary-glow); transform: translateY(-2px); }
+.reports-page__cta:hover {
+  background: var(--color-primary-hover);
+  box-shadow: 0 4px 14px var(--color-primary-glow);
+  transform: translateY(-2px);
+}
 
-.reports-page__grid { display: flex; flex-direction: column; gap: 12px; }
+.reports-page__grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 
 .report-card {
   display: flex;
@@ -72,7 +88,11 @@
   transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), border-color 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-.report-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: color-mix(in srgb, var(--color-primary) 30%, transparent); }
+.report-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
+}
 
 .report-card__icon {
   width: 40px;
@@ -86,7 +106,10 @@
   flex-shrink: 0;
 }
 
-.report-card__body { flex: 1; min-width: 0; }
+.report-card__body {
+  flex: 1;
+  min-width: 0;
+}
 
 .report-card__title {
   font-size: 14.5px;
@@ -98,9 +121,18 @@
   white-space: nowrap;
 }
 
-.report-card__meta { font-size: 12px; color: var(--text-secondary); margin: 0; }
+.report-card__meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 0;
+}
 
-.report-card__actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.report-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
 
 .report-card__btn {
   display: flex;
@@ -118,7 +150,11 @@
   transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-.report-card__btn:hover { border-color: var(--color-primary-glow); color: var(--color-primary); transform: translateY(-1px); }
+.report-card__btn:hover {
+  border-color: var(--color-primary-glow);
+  color: var(--color-primary);
+  transform: translateY(-1px);
+}
 
 .report-card__btn--primary {
   background: var(--color-primary);
@@ -126,7 +162,10 @@
   color: var(--btn-primary-text);
 }
 
-.report-card__btn--primary:hover { background: var(--color-primary-hover); color: var(--btn-primary-text); }
+.report-card__btn--primary:hover {
+  background: var(--color-primary-hover);
+  color: var(--btn-primary-text);
+}
 
 /* ── Skeletons ────────────────────────────────────────────── */
 .reports-page__skeletons {
@@ -148,25 +187,37 @@
 .reports-skeleton::after {
   content: '';
   position: absolute;
-  top: 0; left: -100%;
-  width: 50%; height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    color-mix(in srgb, var(--color-primary) 5%, transparent),
-    transparent
-  );
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg,
+      transparent,
+      color-mix(in srgb, var(--color-primary) 5%, transparent),
+      transparent);
   animation: skeleton-shimmer 2s infinite;
 }
 
 @keyframes skeleton-pulse {
-  0%, 100% { opacity: 0.6; }
-  50%       { opacity: 1;   }
+
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+
+  50% {
+    opacity: 1;
+  }
 }
 
 @keyframes skeleton-shimmer {
-  0% { left: -100%; }
-  100% { left: 200%; }
+  0% {
+    left: -100%;
+  }
+
+  100% {
+    left: 200%;
+  }
 }
 
 /* ── Error ────────────────────────────────────────────────── */
@@ -174,8 +225,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  background: rgba(239,68,68,0.08);
-  border: 1px solid rgba(239,68,68,0.25);
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
   border-radius: 10px;
   padding: 12px 16px;
   color: var(--color-danger);
@@ -185,8 +236,8 @@
 
 .reports-page__error button {
   margin-left: auto;
-  background: rgba(239,68,68,0.12);
-  border: 1px solid rgba(239,68,68,0.3);
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
   border-radius: 6px;
   color: var(--color-danger);
   font-size: 12px;
@@ -197,13 +248,26 @@
   transition: background-color 0.15s;
 }
 
-.reports-page__error button:hover { background: rgba(239,68,68,0.2); }
+.reports-page__error button:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
 
 /* ── Risk badges in meta ──────────────────────────────────── */
-.report-card__risk { font-weight: 700; }
-.report-card__risk.risk--low  { color: var(--color-success); }
-.report-card__risk.risk--med  { color: var(--color-warning); }
-.report-card__risk.risk--high { color: var(--color-danger);  }
+.report-card__risk {
+  font-weight: 700;
+}
+
+.report-card__risk.risk--low {
+  color: var(--color-success);
+}
+
+.report-card__risk.risk--med {
+  color: var(--color-warning);
+}
+
+.report-card__risk.risk--high {
+  color: var(--color-danger);
+}
 
 /* ── Refresh button ───────────────────────────────────────── */
 .reports-page__refresh-btn {
@@ -222,13 +286,34 @@
   flex-shrink: 0;
 }
 
-.reports-page__refresh-btn:hover { border-color: var(--color-primary-glow); color: var(--color-primary); transform: rotate(180deg); }
-.reports-page__refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.reports-page__refresh-btn:hover {
+  border-color: var(--color-primary-glow);
+  color: var(--color-primary);
+  transform: rotate(180deg);
+}
 
-.reports-page__header { align-items: center; }
-.reports-page__header-text { flex: 1; }
+.reports-page__refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
 
-.spinning { animation: spin 0.8s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
+.reports-page__header {
+  align-items: center;
+}
+
+.reports-page__header-text {
+  flex: 1;
+}
+
+.spinning {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 /* toast handled by global ToastProvider */

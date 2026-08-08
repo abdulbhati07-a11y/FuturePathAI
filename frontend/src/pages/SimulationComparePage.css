@@ -1,11 +1,10 @@
 /* ── SimulationComparePage ──────────────────────────────────── */
 .compare {
-  padding: 1.5rem;
-  max-width: 1100px;
-  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  padding: 28px 32px;
+  gap: 0;
+  min-height: 100%;
 }
 
 .compare__topbar {
@@ -229,6 +228,7 @@
 }
 
 @media (max-width: 700px) {
+  .compare { padding: 16px; gap: 20px; }
   .compare__grid { grid-template-columns: 1fr; }
   .compare__sim-row { flex-direction: column; }
   .compare__vs { display: none; }

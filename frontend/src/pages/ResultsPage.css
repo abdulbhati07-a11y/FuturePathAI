@@ -26,7 +26,11 @@
   animation: spin 0.9s linear infinite;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 .results-page__error-msg {
   font-size: 16px;
@@ -87,7 +91,9 @@
   transition: color 0.15s;
 }
 
-.results-page__back-btn:hover { color: var(--color-primary); }
+.results-page__back-btn:hover {
+  color: var(--color-primary);
+}
 
 /* Right-side actions group */
 .results-page__actions {
@@ -182,8 +188,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .results-page__copy-btn,
-  .results-page__compare-btn { transition: none; }
+  .results-page__compare-btn {
+    transition: none;
+  }
 }
 
 /* Export PDF button — primary action */
@@ -235,7 +244,9 @@
 }
 
 @media (max-width: 700px) {
-  .results-page__skeleton-row { grid-template-columns: 1fr; }
+  .results-page__skeleton-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ── Report container ─────────────────────────────────────────────────────── */
@@ -284,8 +295,21 @@
 }
 
 @media (max-width: 700px) {
-  .results-page__main { padding: 20px 16px 0; }
-  .results-page__action-bar { flex-direction: column; align-items: flex-start; }
-  .results-page__actions { width: 100%; }
-  .results-page__export-btn { flex: 1; justify-content: center; }
+  .results-page__main {
+    padding: 20px 16px 0;
+  }
+
+  .results-page__action-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .results-page__actions {
+    width: 100%;
+  }
+
+  .results-page__export-btn {
+    flex: 1;
+    justify-content: center;
+  }
 }
