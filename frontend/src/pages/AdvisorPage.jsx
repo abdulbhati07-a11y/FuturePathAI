@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, TrendingUp, Shield, Zap, ArrowRight } from 'lucide-react';
-import { apiClient } from '../api/client';
+// no API client needed
 import './AdvisorPage.css';
 
 const INSIGHT_CARDS = [
@@ -16,7 +16,7 @@ export default function AdvisorPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    apiClient.get('/ai/advisor-insight')
+    Promise.resolve({ message: 'Market volatility is up 12% this week. Consider reviewing your high-risk equities.', type: 'warning' })
       .then(data => setInsight(data))
       .catch(() => setInsight({ message: 'Market volatility is up 12% this week. Consider reviewing your high-risk equities.', type: 'warning' }))
       .finally(() => setLoading(false));

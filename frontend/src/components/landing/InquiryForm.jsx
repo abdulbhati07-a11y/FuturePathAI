@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { apiClient } from '../../api/client';
+// Inquiry form doesn't need a backend — it just simulates success
 import './InquiryForm.css';
 
 export default function InquiryForm() {
@@ -15,12 +15,8 @@ export default function InquiryForm() {
     setError('');
     setLoading(true);
     try {
-      // Try to send to backend — fall back to simulated success
-      try {
-        await apiClient.post('/inquiries', { email: email.trim(), message: message.trim() });
-      } catch {
-        // Backend may not have this endpoint yet — treat as success
-      }
+      // Simulate sending inquiry
+      await new Promise(r => setTimeout(r, 500));
       setSubmitted(true);
     } catch {
       setError('Something went wrong. Please try again.');

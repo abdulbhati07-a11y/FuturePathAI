@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookMarked, FileText, Download, ExternalLink, RefreshCw, AlertCircle } from 'lucide-react';
-import { apiClient } from '../api/client';
+import { supabase } from '../api/supabase';
 import { useToast }  from '../context/ToastContext';
 import './ReportsPage.css';
 
@@ -34,9 +34,14 @@ export default function ReportsPage() {
     setLoading(true);
     setError('');
     try {
-      const raw = await apiClient.get('/simulations?status=COMPLETED&limit=20');
-      const list = Array.isArray(raw) ? raw : (raw?.data ?? raw?.items ?? []);
-      setReports(list.map(mapReport));
+      const { data, error } = await supabase
+        .from('simulations')
+        .select('*')
+        .eq('status', 'COMPLETED')
+        .order('updated_at', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      setReports((data || []).map(mapReport));
     } catch (err) {
       // Graceful fallback: show static mocks so the page isn't blank
       setReports([

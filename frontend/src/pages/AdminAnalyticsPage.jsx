@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { apiClient } from '../api/client';
+import { supabase } from '../api/supabase';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid, Legend,
@@ -23,9 +23,9 @@ export default function AdminAnalyticsPage() {
   const navigate = useNavigate();
 
   const [analytics, setAnalytics] = useState(null);
-  const [users, setUsers]         = useState([]);
-  const [status, setStatus]       = useState('loading');
-  const [error, setError]         = useState('');
+  const [users, setUsers] = useState([]);
+  const [status, setStatus] = useState('loading');
+  const [error, setError] = useState('');
 
   const isAdmin = user?.role === 'ADMIN' || user?.roles?.includes('admin');
 
@@ -34,12 +34,15 @@ export default function AdminAnalyticsPage() {
 
     async function load() {
       try {
-        const [analyticsData, usersData] = await Promise.all([
-          apiClient.get('/admin/analytics'),
-          apiClient.get('/admin/users'),
+        const [{ data: sims }, { data: usersData }] = await Promise.all([
+          supabase.from('simulations').select('*', { count: 'exact' }),
+          supabase.from('users').select('*'),
         ]);
-        setAnalytics(analyticsData);
-        setUsers(Array.isArray(usersData) ? usersData : usersData?.users ?? []);
+        const totalSims = sims?.length ?? 0;
+        const completed = sims?.filter(s => s.status === 'COMPLETED').length ?? 0;
+        const avgRisk = totalSims ? Math.round(sims.reduce((a, s) => a + (s.risk_score || 0), 0) / totalSims) : 0;
+        setAnalytics({ totalSimulations: totalSims, completedSimulations: completed, averageRisk: avgRisk, totalUsers: usersData?.length ?? 0 });
+        setUsers(usersData || []);
         setStatus('ready');
       } catch (err) {
         setError(err.message || 'Failed to load admin data.');
@@ -74,7 +77,7 @@ export default function AdminAnalyticsPage() {
 
   // Normalise analytics shape — backend may vary
   const stats = analytics?.stats ?? analytics ?? {};
-  const simsByDay   = analytics?.simulationsByDay   ?? analytics?.byDay   ?? [];
+  const simsByDay = analytics?.simulationsByDay ?? analytics?.byDay ?? [];
   const simsByCategory = analytics?.simulationsByCategory ?? analytics?.byCategory ?? [];
 
   return (
@@ -86,10 +89,10 @@ export default function AdminAnalyticsPage() {
 
       {/* ── Platform stats ────────────────────────────────── */}
       <div className="admin__stats-grid">
-        <StatCard label="Total Users"       value={stats.totalUsers}       accent="#6366f1" />
+        <StatCard label="Total Users" value={stats.totalUsers} accent="#6366f1" />
         <StatCard label="Total Simulations" value={stats.totalSimulations} accent="#22c55e" />
-        <StatCard label="Reports Generated" value={stats.totalReports}     accent="#f59e0b" />
-        <StatCard label="Premium Users"     value={stats.premiumUsers}     accent="#a78bfa"
+        <StatCard label="Reports Generated" value={stats.totalReports} accent="#f59e0b" />
+        <StatCard label="Premium Users" value={stats.premiumUsers} accent="#a78bfa"
           sub={stats.totalUsers ? `${Math.round((stats.premiumUsers / stats.totalUsers) * 100)}% conversion` : null}
         />
       </div>
@@ -125,7 +128,7 @@ export default function AdminAnalyticsPage() {
                   contentStyle={{ background: '#1e1e2e', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }}
                   labelStyle={{ color: '#f1f5f9' }}
                 />
-                <Bar dataKey="count" fill="#6366f1" radius={[4,4,0,0]} />
+                <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

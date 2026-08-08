@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Search, RefreshCw, ChevronLeft, ChevronRight, Clock, CheckCircle2, AlertCircle, FileText, X } from 'lucide-react';
-import { apiClient } from '../api/client';
+import { supabase } from '../api/supabase';
 import './HistoryPage.css';
 
 const STATUS_META = {
@@ -33,13 +33,30 @@ export default function HistoryPage() {
     setLoading(true);
     setError('');
     try {
-      const params = new URLSearchParams({ page, limit: LIMIT });
-      if (category !== 'All') params.set('category', category);
-      const raw = await apiClient.get(`/simulations?${params}`);
-      const list = Array.isArray(raw) ? raw : (raw?.data ?? []);
-      const meta = Array.isArray(raw) ? null : raw?.meta;
+      let query = supabase.from('simulations').select('*', { count: 'exact' });
+      
+      if (category !== 'All') {
+        query = query.eq('category', category);
+      }
+      
+      const { data, error, count } = await query
+        .order('updated_at', { ascending: false })
+        .range((page - 1) * LIMIT, page * LIMIT - 1);
+        
+      if (error) throw error;
+
+      const list = (data || []).map(sim => ({
+        id: sim.id,
+        title: sim.title,
+        category: sim.category,
+        status: sim.status,
+        riskScore: sim.risk_score ?? 0,
+        confidenceScore: sim.confidence_score ?? 0,
+        updatedAt: sim.updated_at || sim.created_at,
+      }));
+
       setSimulations(list);
-      setTotal(meta?.total ?? list.length);
+      setTotal(count ?? list.length);
     } catch (err) {
       setError(err.message || 'Failed to load simulations.');
     } finally {

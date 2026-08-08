@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Globe, User, Shield, ChevronRight, RefreshCw, AlertCircle, FileText } from 'lucide-react';
-import { apiClient } from '../api/client';
+import { supabase } from '../api/supabase';
 import './GalleryPage.css';
 
 const MOCK_GALLERY = [
@@ -26,9 +26,14 @@ export default function GalleryPage() {
     setLoading(true);
     setError('');
     try {
-      const raw  = await apiClient.get('/simulations/public');
-      const list = Array.isArray(raw) ? raw : (raw?.data ?? []);
-      setSimulations(list.length ? list : MOCK_GALLERY);
+      const { data, error } = await supabase
+        .from('simulations')
+        .select('*')
+        .eq('is_public', true)
+        .order('updated_at', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      setSimulations(data.length ? data : MOCK_GALLERY);
     } catch {
       // API may not have a public gallery endpoint yet — use mocks
       setSimulations(MOCK_GALLERY);

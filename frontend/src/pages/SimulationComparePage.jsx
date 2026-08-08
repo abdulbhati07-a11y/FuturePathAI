@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { apiClient } from '../api/client';
+import { supabase } from '../api/supabase';
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis,
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend,
@@ -60,8 +60,8 @@ export default function SimulationComparePage() {
     setPickLoading(true);
     (async () => {
       try {
-        const raw = await apiClient.get('/simulations?limit=50');
-        const list = Array.isArray(raw) ? raw : (raw?.data ?? []);
+        const { data, error } = await supabase.from('simulations').select('*').limit(50);
+        const list = data || [];
         if (mounted) setPickList(list.filter(s => String(s.id) !== String(idA)));
       } catch {
         if (mounted) setPickList([]);
@@ -79,10 +79,18 @@ export default function SimulationComparePage() {
       setStatus('loading');
       try {
         const [simA, simB, reportA, reportB] = await Promise.all([
-          apiClient.get(`/simulations/${idA}`),
-          apiClient.get(`/simulations/${idB}`),
-          apiClient.get(`/reports/simulation/${idA}`).catch(() => null),
-          apiClient.get(`/reports/simulation/${idB}`).catch(() => null),
+          supabase.from('simulations').select('*').eq('id', idA).single().then(r => r.data),
+          supabase.from('simulations').select('*').eq('id', idB).single().then(r => r.data),
+          supabase.from('reports').select('*').eq('simulation_id', idA).single().then(r => {
+            const data = r.data;
+            if (!data) return null;
+            return { scores: data.scores, analysis: data.recommendations };
+          }).catch(() => null),
+          supabase.from('reports').select('*').eq('simulation_id', idB).single().then(r => {
+            const data = r.data;
+            if (!data) return null;
+            return { scores: data.scores, analysis: data.recommendations };
+          }).catch(() => null),
         ]);
         setData({ simA, simB, reportA, reportB });
         setStatus('ready');
