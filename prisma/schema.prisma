@@ -1,11 +1,11 @@
-// FuturePath AI — Prisma Schema (MySQL / MariaDB via XAMPP)
+// FuturePath AI — Prisma Schema (PostgreSQL via Supabase)
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
 }
 
 model User {
@@ -32,8 +32,8 @@ model Simulation {
   category           String
   status             String   @default("DRAFT")
   isPublic           Boolean  @default(false)
-  answers            Json
-  generatedQuestions Json
+  answers            Json     @default("{}")
+  generatedQuestions Json     @default("[]")
   decisionScore      Int?
   riskScore          Int?
   confidenceScore    Int?
@@ -50,11 +50,11 @@ model Report {
   id              String   @id @default(uuid())
   simulationId    String   @unique
   userId          String
-  summary         String   @db.Text
-  chartData       Json
-  timeline        Json
-  scores          Json
-  recommendations Json
+  summary         String   @default("")
+  chartData       Json     @default("[]")
+  timeline        Json     @default("[]")
+  scores          Json     @default("{}")
+  recommendations Json     @default("{}")
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -69,7 +69,7 @@ model Notification {
   userId    String
   type      String
   title     String
-  message   String   @db.Text
+  message   String
   isRead    Boolean  @default(false)
   metadata  Json?
   createdAt DateTime @default(now())
