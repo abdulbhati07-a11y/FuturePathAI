@@ -2,9 +2,19 @@
   "buildCommand": "cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/dist",
   "installCommand": "cd frontend && npm install",
-  "framework": "vite",
+  "framework": null,
+  "functions": {
+    "frontend/api/**/*.ts": {
+      "runtime": "nodejs20.x"
+    }
+  },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/auth/:path*",        "destination": "/frontend/api/auth/:path*" },
+    { "source": "/users/:path*",       "destination": "/frontend/api/users/:path*" },
+    { "source": "/simulations/:path*", "destination": "/frontend/api/simulations/:path*" },
+    { "source": "/ai/:path*",          "destination": "/frontend/api/ai/:path*" },
+    { "source": "/analytics/:path*",   "destination": "/frontend/api/analytics/:path*" },
+    { "source": "/reports/:path*",     "destination": "/frontend/api/reports/:path*" },
+    { "source": "/(.*)",               "destination": "/frontend/dist/index.html" }
   ]
 }

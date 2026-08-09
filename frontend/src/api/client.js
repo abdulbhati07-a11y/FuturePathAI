@@ -15,7 +15,9 @@
  *   5. Throws so the caller's try/catch still works (shows error state)
  */
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+// Empty string = same origin (works on Vercel where API and frontend share the same domain)
+// Falls back to localhost:3000 for local development with the NestJS server running
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '';
 
 // Debounce flag — only fire the event once per "session expiry" cycle,
 // not once per concurrent in-flight request that all get 401.
