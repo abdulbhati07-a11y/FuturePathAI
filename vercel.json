@@ -4,17 +4,19 @@
   "installCommand": "cd frontend && npm install",
   "framework": null,
   "functions": {
-    "frontend/api/**/*.ts": {
-      "runtime": "nodejs20.x"
+    "frontend/api/index.ts": {
+      "runtime": "nodejs20.x",
+      "maxDuration": 30
     }
   },
   "rewrites": [
-    { "source": "/auth/:path*",        "destination": "/frontend/api/auth/:path*" },
-    { "source": "/users/:path*",       "destination": "/frontend/api/users/:path*" },
-    { "source": "/simulations/:path*", "destination": "/frontend/api/simulations/:path*" },
-    { "source": "/ai/:path*",          "destination": "/frontend/api/ai/:path*" },
-    { "source": "/analytics/:path*",   "destination": "/frontend/api/analytics/:path*" },
-    { "source": "/reports/:path*",     "destination": "/frontend/api/reports/:path*" },
-    { "source": "/(.*)",               "destination": "/frontend/dist/index.html" }
+    { "source": "/auth/:path*",        "destination": "/frontend/api/index.ts" },
+    { "source": "/users/:path*",       "destination": "/frontend/api/index.ts" },
+    { "source": "/simulations/:path*", "destination": "/frontend/api/index.ts" },
+    { "source": "/simulations",        "destination": "/frontend/api/index.ts" },
+    { "source": "/ai/:path*",          "destination": "/frontend/api/index.ts" },
+    { "source": "/analytics/:path*",   "destination": "/frontend/api/index.ts" },
+    { "source": "/reports/:path*",     "destination": "/frontend/api/index.ts" },
+    { "source": "/(.*)",               "destination": "/index.html" }
   ]
 }
