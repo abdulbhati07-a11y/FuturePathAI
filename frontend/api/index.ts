@@ -1,10 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import { v4 as uuid } from 'uuid';
+// @ts-ignore — Prisma 7 client export
+const { PrismaClient } = require('@prisma/client');
 
 // ── DB ────────────────────────────────────────────────────────────────────────
 let _prisma: PrismaClient;
