@@ -4,9 +4,13 @@ import jwt from 'jsonwebtoken';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import { v4 as uuid } from 'uuid';
-// Prisma 7's client is CommonJS; require() avoids ESM-interop issues in the Vercel
-// bundler. The type is imported separately (type-only import is erased at build).
+import { createRequire } from 'node:module';
+// Prisma 7's client is CommonJS, but this file compiles to ESM (package.json has
+// "type": "module"), where a bare `require` is undefined. createRequire restores it;
+// the string-literal argument keeps @prisma/client traceable so Vercel bundles it.
+// The type is imported separately (type-only import is erased at build).
 import type { PrismaClient as PrismaClientType } from '@prisma/client';
+const require = createRequire(import.meta.url);
 // @ts-ignore — Prisma 7 client export
 const { PrismaClient } = require('@prisma/client');
 
