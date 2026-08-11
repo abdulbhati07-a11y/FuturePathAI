@@ -24,7 +24,7 @@
 .sidebar__brand-icon {
   width: 30px;
   height: 30px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--color-primary);
   color: var(--btn-primary-text);
   display: flex;
@@ -76,19 +76,19 @@
   padding: 9px 10px;
   border: none;
   background: transparent;
-  border-radius: 9px;
+  border-radius: var(--radius-sm);
   font-size: 13.5px;
   font-weight: 500;
   color: var(--text-secondary);
   cursor: pointer;
   text-align: left;
   font-family: inherit;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: background-color var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
   position: relative;
 }
 
 .sidebar__nav-item:hover {
-  background: rgba(128, 128, 128, 0.08);
+  background: color-mix(in srgb, var(--text-primary) 6%, transparent);
   color: var(--text-primary);
 }
 
@@ -135,19 +135,20 @@
   background: var(--gradient-primary);
   color: var(--btn-primary-text);
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   font-size: 13.5px;
   font-weight: 700;
   cursor: pointer;
   font-family: inherit;
   margin-top: 8px;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all var(--dur-med) var(--ease-standard);
   box-shadow: var(--shadow-sm);
 }
 
 .sidebar__cta:hover {
   background: var(--color-primary-hover);
-  box-shadow: 0 4px 14px var(--color-primary-glow);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md), 0 4px 14px var(--color-primary-glow);
 }
 
 /* ─── User strip ──────────────────────────────────────────── */
@@ -196,14 +197,14 @@
   font-weight: 700;
   background: color-mix(in srgb, var(--color-primary) 12%, transparent);
   color: var(--color-primary);
-  border-radius: 10px;
+  border-radius: var(--radius-pill);
   padding: 1px 7px;
   display: inline-block;
   width: fit-content;
 }
 
 .sidebar__user-role--admin {
-  background: rgba(239,68,68,0.1);
+  background: color-mix(in srgb, var(--color-danger) 10%, transparent);
   color: var(--color-danger);
 }
 
@@ -213,17 +214,17 @@
   justify-content: center;
   width: 28px;
   height: 28px;
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   border: none;
   background: transparent;
   color: var(--text-tertiary);
   cursor: pointer;
-  transition: background-color 0.15s, color 0.15s;
+  transition: background-color var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
   flex-shrink: 0;
 }
 
 .sidebar__logout-btn:hover {
-  background: rgba(239,68,68,0.1);
+  background: color-mix(in srgb, var(--color-danger) 10%, transparent);
   color: var(--color-danger);
 }
 
@@ -231,8 +232,8 @@
 .sidebar__nav-item:focus-visible,
 .sidebar__cta:focus-visible,
 .sidebar__logout-btn:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -267,13 +268,13 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border-subtle);
   background: var(--bg-surface);
   color: var(--text-secondary);
   cursor: pointer;
   flex-shrink: 0;
-  transition: background-color 0.15s, color 0.15s;
+  transition: background-color var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
 }
 
 .sidebar__close-btn:hover {
@@ -294,7 +295,7 @@
 
   /* Slide off-screen by default */
   transform: translateX(-100%);
-  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform var(--dur-slow) var(--ease-out);
 
   /* Same look as the desktop sidebar */
   background: var(--bg-surface-elevated);
