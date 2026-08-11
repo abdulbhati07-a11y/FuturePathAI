@@ -21,9 +21,9 @@
 }
 
 .admin__title {
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: var(--text-primary, #f1f5f9);
+  font-size: var(--fs-2xl);
+  font-weight: 800;
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -45,10 +45,10 @@
 }
 
 .admin__stat-card {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
   border-top: 3px solid;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 1.1rem 1.25rem;
   display: flex;
   flex-direction: column;
@@ -58,13 +58,13 @@
 .admin__stat-value {
   font-size: 1.8rem;
   font-weight: 700;
-  color: var(--text-primary, #f1f5f9);
+  color: var(--text-primary);
   line-height: 1;
 }
 
 .admin__stat-label {
   font-size: 0.78rem;
-  color: var(--text-secondary, #94a3b8);
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -83,9 +83,9 @@
 }
 
 .admin__chart-card {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
   padding: 1.25rem;
 }
 
@@ -93,16 +93,16 @@
   margin: 0 0 1rem;
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--text-secondary, #94a3b8);
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 /* Users table */
 .admin__users-card {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
   padding: 1.25rem;
 }
 
@@ -110,7 +110,7 @@
   margin: 0 0 1rem;
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--text-secondary, #94a3b8);
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -121,15 +121,15 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 0.84rem;
-  color: var(--text-primary, #f1f5f9);
+  color: var(--text-primary);
 }
 
 .admin__table th {
   text-align: left;
   padding: 0.6rem 0.75rem;
-  color: var(--text-secondary, #94a3b8);
+  color: var(--text-secondary);
   font-weight: 600;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid var(--border-subtle);
   font-size: 0.78rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -137,24 +137,24 @@
 
 .admin__table td {
   padding: 0.65rem 0.75rem;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 5%, transparent);
 }
 .admin__table tr:last-child td { border-bottom: none; }
-.admin__table tr:hover td { background: rgba(255,255,255,0.02); }
+.admin__table tr:hover td { background: color-mix(in srgb, var(--text-primary) 4%, transparent); }
 
-.admin__email { color: var(--text-secondary, #94a3b8); font-size: 0.8rem; }
+.admin__email { color: var(--text-secondary); font-size: 0.8rem; }
 
 .admin__role-badge {
   display: inline-block;
   padding: 0.15em 0.55em;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.05em;
 }
 .admin__role-badge--admin   { background: color-mix(in srgb, var(--color-primary) 20%, transparent);  color: var(--color-primary); }
-.admin__role-badge--premium { background: rgba(245,158,11,0.2);  color: #fcd34d; }
-.admin__role-badge--free    { background: rgba(148,163,184,0.15); color: #94a3b8; }
+.admin__role-badge--premium { background: color-mix(in srgb, var(--color-warning) 20%, transparent);  color: var(--color-warning); }
+.admin__role-badge--free    { background: color-mix(in srgb, var(--text-tertiary) 15%, transparent); color: var(--text-tertiary); }
 
 /* Forbidden / loading states */
 .admin__forbidden, .admin__loading {
@@ -164,12 +164,12 @@
   justify-content: center;
   min-height: 300px;
   gap: 1rem;
-  color: var(--text-secondary, #94a3b8);
+  color: var(--text-secondary);
   text-align: center;
 }
 .admin__forbidden button {
   padding: 0.5rem 1.25rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid color-mix(in srgb, var(--color-primary) 40%, transparent);
   background: color-mix(in srgb, var(--color-primary) 10%, transparent);
   color: var(--color-primary);

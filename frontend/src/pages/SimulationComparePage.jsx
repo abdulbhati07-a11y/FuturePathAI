@@ -164,6 +164,11 @@ export default function SimulationComparePage() {
   // primary, series B the success token — distinguishable in every theme.
   const colorA = cssVar('--color-primary');
   const colorB = cssVar('--color-success', '#34D399');
+  const axisColor = cssVar('--text-tertiary');
+  const gridColor = cssVar('--border-subtle');
+  const tooltipBg = cssVar('--bg-surface-elevated');
+  const tooltipBorder = cssVar('--border-strong');
+  const tooltipLabel = cssVar('--text-primary');
 
   return (
     <div className="compare">
@@ -191,8 +196,8 @@ export default function SimulationComparePage() {
           <h3 className="compare__card-title">Score Radar</h3>
           <ResponsiveContainer width="100%" height={260}>
             <RadarChart data={radarData}>
-              <PolarGrid stroke="rgba(255,255,255,0.08)" />
-              <PolarAngleAxis dataKey="metric" tick={{ fill: '#94a3b8', fontSize: 11 }} />
+              <PolarGrid stroke={gridColor} />
+              <PolarAngleAxis dataKey="metric" tick={{ fill: axisColor, fontSize: 11 }} />
               <Radar name={simA?.title || 'A'} dataKey="A" stroke={colorA} fill={colorA} fillOpacity={0.25} />
               <Radar name={simB?.title || 'B'} dataKey="B" stroke={colorB} fill={colorB} fillOpacity={0.2} />
               <Legend />
@@ -220,11 +225,11 @@ export default function SimulationComparePage() {
           <h3 className="compare__card-title">Score Overview</h3>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={radarData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
-              <XAxis dataKey="metric" tick={{ fill: '#94a3b8', fontSize: 11 }} />
-              <YAxis domain={[0, 100]} tick={{ fill: '#94a3b8', fontSize: 11 }} />
+              <XAxis dataKey="metric" tick={{ fill: axisColor, fontSize: 11 }} />
+              <YAxis domain={[0, 100]} tick={{ fill: axisColor, fontSize: 11 }} />
               <Tooltip
-                contentStyle={{ background: '#1e1e2e', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }}
-                labelStyle={{ color: '#f1f5f9' }}
+                contentStyle={{ background: tooltipBg, border: `1px solid ${tooltipBorder}`, borderRadius: 8 }}
+                labelStyle={{ color: tooltipLabel }}
               />
               <Legend />
               <Bar dataKey="A" name={simA?.title || 'Sim A'} fill={colorA} radius={[4,4,0,0]} />

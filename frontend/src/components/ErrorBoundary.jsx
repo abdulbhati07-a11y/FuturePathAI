@@ -48,10 +48,10 @@ export default class ErrorBoundary extends Component {
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
         minHeight: '240px', padding: '2rem', gap: '1rem',
-        color: 'var(--text-primary, #f1f5f9)',
-        background: 'var(--bg-card, rgba(255,255,255,0.04))',
-        borderRadius: '12px',
-        border: '1px solid rgba(239,68,68,0.25)',
+        color: 'var(--text-primary)',
+        background: 'var(--bg-surface)',
+        borderRadius: 'var(--radius-md)',
+        border: '1px solid color-mix(in srgb, var(--color-danger) 25%, transparent)',
         margin: '1.5rem',
       }}>
         <span style={{ fontSize: '2.5rem' }}>⚠️</span>
@@ -60,7 +60,7 @@ export default class ErrorBoundary extends Component {
         </h3>
         <p style={{
           margin: 0, fontSize: '0.82rem',
-          color: 'var(--text-secondary, #94a3b8)',
+          color: 'var(--text-secondary)',
           textAlign: 'center', maxWidth: '340px',
         }}>
           {error?.message || 'An unexpected error occurred in this section.'}
@@ -68,7 +68,7 @@ export default class ErrorBoundary extends Component {
         <button
           onClick={this.reset}
           style={{
-            padding: '0.5rem 1.25rem', borderRadius: '8px',
+            padding: '0.5rem 1.25rem', borderRadius: 'var(--radius-sm)',
             border: '1px solid color-mix(in srgb, var(--color-primary) 50%, transparent)',
             background: 'color-mix(in srgb, var(--color-primary) 15%, transparent)',
             color: 'var(--color-primary)', cursor: 'pointer', fontSize: '0.82rem',

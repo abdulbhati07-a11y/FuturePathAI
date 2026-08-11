@@ -271,8 +271,8 @@
   flex: 1;
   height: 4px;
   border-radius: 2px;
-  background: rgba(255, 255, 255, 0.08);
-  transition: background 0.35s ease;
+  background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+  transition: background var(--dur-slow) var(--ease-standard);
 }
 
 .new-sim-page__progress-step--done {
@@ -291,7 +291,7 @@
 
 .new-sim-page__progress-label {
   font-size: 11px;
-  color: var(--text-secondary, #94a3b8);
+  color: var(--text-secondary);
   white-space: nowrap;
   min-width: 80px;
   text-align: right;

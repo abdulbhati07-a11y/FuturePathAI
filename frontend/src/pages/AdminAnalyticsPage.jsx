@@ -86,6 +86,11 @@ export default function AdminAnalyticsPage() {
   // Recharts SVG props need a real colour at runtime (a `var()` won't paint),
   // so read the brand primary from the active theme.
   const chartColor = cssVar('--color-primary');
+  const axisColor = cssVar('--text-tertiary');
+  const gridColor = cssVar('--border-subtle');
+  const tooltipBg = cssVar('--bg-surface-elevated');
+  const tooltipBorder = cssVar('--border-strong');
+  const tooltipLabel = cssVar('--text-primary');
 
   return (
     <div className="admin">
@@ -111,12 +116,12 @@ export default function AdminAnalyticsPage() {
             <h3>Simulations per Day</h3>
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={simsByDay} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
-                <CartesianGrid stroke="rgba(255,255,255,0.06)" />
-                <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                <CartesianGrid stroke={gridColor} />
+                <XAxis dataKey="date" tick={{ fill: axisColor, fontSize: 11 }} />
+                <YAxis tick={{ fill: axisColor, fontSize: 11 }} />
                 <Tooltip
-                  contentStyle={{ background: '#1e1e2e', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }}
-                  labelStyle={{ color: '#f1f5f9' }}
+                  contentStyle={{ background: tooltipBg, border: `1px solid ${tooltipBorder}`, borderRadius: 8 }}
+                  labelStyle={{ color: tooltipLabel }}
                 />
                 <Line type="monotone" dataKey="count" stroke={chartColor} strokeWidth={2} dot={false} />
               </LineChart>
@@ -129,11 +134,11 @@ export default function AdminAnalyticsPage() {
             <h3>Simulations by Category</h3>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={simsByCategory} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
-                <XAxis dataKey="category" tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                <XAxis dataKey="category" tick={{ fill: axisColor, fontSize: 11 }} />
+                <YAxis tick={{ fill: axisColor, fontSize: 11 }} />
                 <Tooltip
-                  contentStyle={{ background: '#1e1e2e', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }}
-                  labelStyle={{ color: '#f1f5f9' }}
+                  contentStyle={{ background: tooltipBg, border: `1px solid ${tooltipBorder}`, borderRadius: 8 }}
+                  labelStyle={{ color: tooltipLabel }}
                 />
                 <Bar dataKey="count" fill={chartColor} radius={[4, 4, 0, 0]} />
               </BarChart>

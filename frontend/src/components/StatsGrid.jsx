@@ -66,7 +66,7 @@ function BarSparkline({ data, color }) {
       <BarChart data={points} margin={{ top: 2, right: 0, left: 0, bottom: 0 }} barCategoryGap="20%">
         <Tooltip
           content={<MicroTooltip formatter={v => `${v?.toFixed(1)}%`} />}
-          cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+          cursor={{ fill: cssVar('--border-subtle') }}
         />
         <Bar
           dataKey="v"

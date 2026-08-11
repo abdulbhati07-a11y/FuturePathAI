@@ -348,17 +348,17 @@
 }
 
 .status--progress {
-  background: rgba(245, 158, 11, 0.12);
+  background: color-mix(in srgb, var(--color-warning) 12%, transparent);
   color: var(--color-warning);
 }
 
 .status--draft {
-  background: rgba(148, 163, 184, 0.12);
+  background: color-mix(in srgb, var(--text-secondary) 12%, transparent);
   color: var(--text-secondary);
 }
 
 .status--archived {
-  background: rgba(100, 116, 139, 0.1);
+  background: color-mix(in srgb, var(--text-tertiary) 12%, transparent);
   color: var(--text-tertiary);
 }
 
