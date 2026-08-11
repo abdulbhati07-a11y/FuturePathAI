@@ -36,10 +36,10 @@
   --text-secondary:       #d4d6b9;
   --text-tertiary:        #9CA3AF;
 
-  /* Shadows */
-  --shadow-sm:  0 2px 4px  rgba(0, 0, 0, 0.30);
-  --shadow-md:  0 8px 24px rgba(0, 0, 0, 0.50);
-  --shadow-lg:  0 16px 48px rgba(0, 0, 0, 0.60);
+  /* Shadows — layered 3-step ramp for a refined, premium depth */
+  --shadow-sm:  0 1px 2px rgba(0, 0, 0, 0.24), 0 1px 3px rgba(0, 0, 0, 0.16);
+  --shadow-md:  0 4px 12px rgba(0, 0, 0, 0.32), 0 2px 6px rgba(0, 0, 0, 0.20);
+  --shadow-lg:  0 12px 32px rgba(0, 0, 0, 0.44), 0 6px 12px rgba(0, 0, 0, 0.24);
   --shadow-glow: 0 0 32px var(--color-primary-glow);
   --shadow-glass: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 
@@ -49,6 +49,56 @@
 
   /* Button text on primary bg */
   --btn-primary-text: #1a1a1a;
+
+  /* ─── Shared scales (theme-independent — inherited by every theme) ─────────
+     One source of truth for radius, spacing, type, motion & focus so every
+     page reads from the same rhythm instead of ad-hoc per-file values.        */
+
+  /* Radius scale */
+  --radius-xs:   6px;
+  --radius-sm:   8px;
+  --radius-md:   12px;
+  --radius-lg:   16px;
+  --radius-xl:   20px;
+  --radius-2xl:  24px;
+  --radius-pill: 999px;
+
+  /* Spacing scale (4px base) */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-7:  28px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Type scale */
+  --fs-xs:      11px;
+  --fs-sm:      13px;
+  --fs-base:    14px;
+  --fs-md:      15px;
+  --fs-lg:      17px;
+  --fs-xl:      19px;
+  --fs-2xl:     22px;
+  --fs-3xl:     28px;
+  --fs-display: 40px;
+
+  /* Motion tokens — the calm micro-interaction vocabulary */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out:      cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 120ms;
+  --dur-med:  200ms;
+  --dur-slow: 320ms;
+
+  /* Consistent focus ring (accent-tinted glow) */
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--color-primary) 32%, transparent);
+
+  /* Standard content padding for page wrappers */
+  --page-max:   1200px;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -82,10 +132,10 @@
   --text-secondary:       #6B3A2A;   /* mid warm brown */
   --text-tertiary:        #B07050;   /* muted terracotta */
 
-  /* Shadows — warm tinted */
-  --shadow-sm:  0 2px 4px  rgba(194, 65, 12, 0.08);
-  --shadow-md:  0 8px 24px rgba(194, 65, 12, 0.12);
-  --shadow-lg:  0 16px 48px rgba(194, 65, 12, 0.16);
+  /* Shadows — warm-tinted layered ramp (matches dark 3-step depth) */
+  --shadow-sm:  0 1px 2px rgba(194, 65, 12, 0.06), 0 1px 3px rgba(124, 45, 18, 0.05);
+  --shadow-md:  0 4px 12px rgba(194, 65, 12, 0.10), 0 2px 6px rgba(124, 45, 18, 0.07);
+  --shadow-lg:  0 12px 32px rgba(194, 65, 12, 0.14), 0 6px 12px rgba(124, 45, 18, 0.09);
   --shadow-glow: 0 0 32px var(--color-primary-glow);
   --shadow-glass: inset 0 1px 0 rgba(255, 255, 255, 0.70);
 
@@ -222,7 +272,80 @@ a:hover { color: var(--color-primary-hover); text-decoration: underline; }
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-md), var(--shadow-glass);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PREMIUM PRIMITIVES — shared, token-driven building blocks.
+   Every page composes from these so the whole product reads as one
+   cohesive, refined surface. Behaviour lives in components; these
+   only carry the visual rhythm (surface, spacing, motion, focus).
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Standard content card — replaces the ~dozen hand-rolled card blocks */
+.surface-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-6);
+}
+
+/* Consistent page wrapper — standardises the 1200/1100/960 divergence */
+.u-page {
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: var(--space-7) var(--space-8);
+}
+
+/* One header rhythm for every page */
+.page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.page-head__title {
+  font-family: 'Outfit', sans-serif;
+  font-size: var(--fs-2xl);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-1);
+}
+
+.page-head__sub {
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Shared micro-interaction: calm hover lift (the standout premium signal) */
+.u-lift {
+  transition: transform var(--dur-med) var(--ease-standard),
+              box-shadow var(--dur-med) var(--ease-standard),
+              border-color var(--dur-med) var(--ease-standard);
+}
+.u-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-strong);
+}
+
+/* Entrance fade — pairs with the existing fade-in keyframe */
+.u-fade-in {
+  animation: fade-in var(--dur-slow) var(--ease-out) both;
+}
+
+/* Refined, consistent focus ring for interactive primitives */
+.u-focus:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-sm);
 }
 
 /* ─── Light‑theme hardcoded‑dark overrides ────────────────────── */
