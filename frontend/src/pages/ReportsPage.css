@@ -23,11 +23,11 @@
 }
 
 .reports-page__title {
-  font-size: 22px;
+  font-size: var(--fs-2xl);
   font-weight: 800;
   color: var(--text-primary);
   margin: 0 0 3px;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 
 .reports-page__subtitle {
