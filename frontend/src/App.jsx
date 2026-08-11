@@ -46,8 +46,8 @@ function PageLoader() {
     }}>
       <span style={{
         width: 18, height: 18, borderRadius: '50%',
-        border: '2px solid rgba(99,102,241,0.3)',
-        borderTopColor: '#6366F1',
+        border: '2px solid color-mix(in srgb, var(--color-primary) 30%, transparent)',
+        borderTopColor: 'var(--color-primary)',
         animation: 'spin 0.7s linear infinite',
         display: 'inline-block',
       }} />
@@ -96,8 +96,8 @@ function ProtectedRoute({ children }) {
       }}>
         <span style={{
           width: 18, height: 18, borderRadius: '50%',
-          border: '2px solid rgba(99,102,241,0.3)',
-          borderTopColor: '#6366F1',
+          border: '2px solid color-mix(in srgb, var(--color-primary) 30%, transparent)',
+          borderTopColor: 'var(--color-primary)',
           animation: 'spin 0.7s linear infinite',
           display: 'inline-block',
         }} />

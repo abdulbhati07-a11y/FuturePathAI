@@ -11,9 +11,9 @@ const MOCK_NOTIFICATIONS = [
 ];
 
 const TYPE_META = {
-  success: { icon: CheckCircle2, color: '#10B981' },
-  info:    { icon: Info,         color: '#6366F1'  },
-  warning: { icon: AlertTriangle,color: '#F59E0B'  },
+  success: { icon: CheckCircle2, color: 'var(--color-success)' },
+  info:    { icon: Info,         color: 'var(--color-primary)' },
+  warning: { icon: AlertTriangle,color: 'var(--color-warning)' },
 };
 
 export default function NotificationsDrawer({ open, onClose }) {

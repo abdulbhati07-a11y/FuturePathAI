@@ -1,13 +1,8 @@
 import { useMemo } from 'react';
 import { AreaChart, Area, ResponsiveContainer, YAxis, Tooltip } from 'recharts';
 import { ArrowUp, ArrowDown, Activity, Sparkles, ArrowRight } from 'lucide-react';
+import { cssVar } from '../utils/cssVar';
 import './SpotlightHero.css';
-
-/* Read a CSS variable at runtime so the chart respects the active theme. */
-function cssVar(name, fallback) {
-  if (typeof document === 'undefined') return fallback;
-  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
-}
 
 function TrendPill({ trend, value }) {
   const up = trend === 'up';
@@ -41,7 +36,7 @@ export default function SpotlightHero({ stats, advisor, onDeepDive }) {
   const capital   = stats?.projectedCapital ?? {};
   const stability = stats?.stabilityIndex ?? {};
 
-  const primary = cssVar('--color-primary', '#6366F1');
+  const primary = cssVar('--color-primary');
 
   const series = useMemo(() => {
     const src =

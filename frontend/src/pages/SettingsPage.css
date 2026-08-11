@@ -111,7 +111,7 @@
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--color-primary), #10B981);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
   color: var(--btn-primary-text);
   font-size: 18px;
   font-weight: 700;

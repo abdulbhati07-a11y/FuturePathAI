@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { apiClient } from '../api/client';
+import { cssVar } from '../utils/cssVar';
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis,
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend,
@@ -159,6 +160,11 @@ export default function SimulationComparePage() {
     B: pct(pickScore(reportB, key)),
   }));
 
+  // Recharts SVG props need real colours at runtime. Series A uses the brand
+  // primary, series B the success token — distinguishable in every theme.
+  const colorA = cssVar('--color-primary');
+  const colorB = cssVar('--color-success', '#34D399');
+
   return (
     <div className="compare">
       <div className="compare__topbar">
@@ -187,8 +193,8 @@ export default function SimulationComparePage() {
             <RadarChart data={radarData}>
               <PolarGrid stroke="rgba(255,255,255,0.08)" />
               <PolarAngleAxis dataKey="metric" tick={{ fill: '#94a3b8', fontSize: 11 }} />
-              <Radar name={simA?.title || 'A'} dataKey="A" stroke="#6366f1" fill="#6366f1" fillOpacity={0.25} />
-              <Radar name={simB?.title || 'B'} dataKey="B" stroke="#22c55e" fill="#22c55e" fillOpacity={0.2} />
+              <Radar name={simA?.title || 'A'} dataKey="A" stroke={colorA} fill={colorA} fillOpacity={0.25} />
+              <Radar name={simB?.title || 'B'} dataKey="B" stroke={colorB} fill={colorB} fillOpacity={0.2} />
               <Legend />
             </RadarChart>
           </ResponsiveContainer>
@@ -221,8 +227,8 @@ export default function SimulationComparePage() {
                 labelStyle={{ color: '#f1f5f9' }}
               />
               <Legend />
-              <Bar dataKey="A" name={simA?.title || 'Sim A'} fill="#6366f1" radius={[4,4,0,0]} />
-              <Bar dataKey="B" name={simB?.title || 'Sim B'} fill="#22c55e" radius={[4,4,0,0]} />
+              <Bar dataKey="A" name={simA?.title || 'Sim A'} fill={colorA} radius={[4,4,0,0]} />
+              <Bar dataKey="B" name={simB?.title || 'Sim B'} fill={colorB} radius={[4,4,0,0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

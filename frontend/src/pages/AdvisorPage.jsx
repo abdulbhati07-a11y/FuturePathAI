@@ -5,9 +5,9 @@ import { Sparkles, TrendingUp, Shield, Zap, ArrowRight } from 'lucide-react';
 import './AdvisorPage.css';
 
 const INSIGHT_CARDS = [
-  { icon: TrendingUp, title: 'Market Momentum', text: 'Tech sector showing 12% upside — review your equity simulations.', color: '#10B981' },
-  { icon: Shield,     title: 'Risk Alert',      text: 'Interest rate volatility may affect your investment path projections.', color: '#F59E0B' },
-  { icon: Zap,        title: 'Opportunity',     text: 'Your Career path shows 3 unexplored branches with high confidence scores.', color: '#6366F1' },
+  { icon: TrendingUp, title: 'Market Momentum', text: 'Tech sector showing 12% upside — review your equity simulations.', color: 'var(--color-success)' },
+  { icon: Shield,     title: 'Risk Alert',      text: 'Interest rate volatility may affect your investment path projections.', color: 'var(--color-warning)' },
+  { icon: Zap,        title: 'Opportunity',     text: 'Your Career path shows 3 unexplored branches with high confidence scores.', color: 'var(--color-primary)' },
 ];
 
 export default function AdvisorPage() {

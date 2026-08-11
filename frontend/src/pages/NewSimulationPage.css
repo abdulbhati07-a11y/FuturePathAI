@@ -151,8 +151,8 @@
   justify-content: space-between;
   gap: 16px;
   padding: 16px 20px;
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: color-mix(in srgb, var(--color-success) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-success) 30%, transparent);
   border-radius: 12px;
 }
 
@@ -276,11 +276,11 @@
 }
 
 .new-sim-page__progress-step--done {
-  background: #6366f1;
+  background: var(--color-primary);
 }
 
 .new-sim-page__progress-step--active {
-  background: linear-gradient(90deg, #6366f1, #a78bfa);
+  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
   animation: progress-pulse 1.6s ease-in-out infinite;
 }
 

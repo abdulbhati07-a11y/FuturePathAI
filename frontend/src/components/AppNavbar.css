@@ -462,7 +462,7 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--color-primary), #10B981);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
   color: var(--btn-primary-text);
   font-size: 11px;
   font-weight: 700;

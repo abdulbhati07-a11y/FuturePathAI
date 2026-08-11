@@ -101,13 +101,13 @@
   height: 8px;
   border-radius: 50%;
   background: var(--color-success);
-  box-shadow: 0 0 8px rgba(16,185,129,0.6);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--color-success) 60%, transparent);
   animation: pulse-dot 2s ease-in-out infinite;
 }
 
 @keyframes pulse-dot {
-  0%,100% { opacity: 1; box-shadow: 0 0 8px rgba(16,185,129,0.6); }
-  50%      { opacity: 0.6; box-shadow: 0 0 4px rgba(16,185,129,0.3); }
+  0%,100% { opacity: 1; box-shadow: 0 0 8px color-mix(in srgb, var(--color-success) 60%, transparent); }
+  50%      { opacity: 0.6; box-shadow: 0 0 4px color-mix(in srgb, var(--color-success) 30%, transparent); }
 }
 
 .advisor-page__live-label {

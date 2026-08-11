@@ -8,19 +8,19 @@ const FEATURES = [
     icon: BarChart2,
     title: 'Model Any Decision',
     desc: 'Simulate career pivots, investments, relocations and more with AI precision.',
-    color: '#6366F1',
+    color: 'var(--color-primary)',
   },
   {
     icon: Shield,
     title: 'Quantified Risk Scores',
     desc: 'Every path comes with a transparent risk score and confidence rating.',
-    color: '#10B981',
+    color: 'var(--color-success)',
   },
   {
     icon: GitBranch,
     title: 'Compare Alternatives',
     desc: 'See best, most-likely, and worst-case scenarios side by side.',
-    color: '#F59E0B',
+    color: 'var(--color-warning)',
   },
 ];
 
@@ -111,7 +111,7 @@ export default function DashboardOnboarding({ firstName, onStart }) {
       {/* ── Social proof strip ────────────────────────────────────────────── */}
       <div className="onboarding__proof">
         <div className="onboarding__proof-avatars" aria-hidden="true">
-          {['#6366F1', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'].map((c, i) => (
+          {['var(--color-primary)', 'var(--color-success)', 'var(--color-warning)', 'var(--color-danger)', 'var(--color-secondary)'].map((c, i) => (
             <span key={i} className="onboarding__proof-dot" style={{ background: c, zIndex: 5 - i }} />
           ))}
         </div>

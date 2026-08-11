@@ -343,7 +343,7 @@
 }
 
 .status--completed {
-  background: rgba(16, 185, 129, 0.12);
+  background: color-mix(in srgb, var(--color-success) 14%, transparent);
   color: var(--color-success);
 }
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../api/client';
+import { cssVar } from '../utils/cssVar';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid, Legend,
@@ -82,6 +83,10 @@ export default function AdminAnalyticsPage() {
   const simsByDay = analytics?.simulationsByDay ?? analytics?.byDay ?? [];
   const simsByCategory = analytics?.simulationsByCategory ?? analytics?.byCategory ?? [];
 
+  // Recharts SVG props need a real colour at runtime (a `var()` won't paint),
+  // so read the brand primary from the active theme.
+  const chartColor = cssVar('--color-primary');
+
   return (
     <div className="admin">
       <div className="admin__header">
@@ -91,10 +96,10 @@ export default function AdminAnalyticsPage() {
 
       {/* ── Platform stats ────────────────────────────────── */}
       <div className="admin__stats-grid">
-        <StatCard label="Total Users" value={stats.totalUsers} accent="#6366f1" />
-        <StatCard label="Total Simulations" value={stats.totalSimulations} accent="#22c55e" />
-        <StatCard label="Reports Generated" value={stats.totalReports} accent="#f59e0b" />
-        <StatCard label="Premium Users" value={stats.premiumUsers} accent="#a78bfa"
+        <StatCard label="Total Users" value={stats.totalUsers} accent="var(--color-primary)" />
+        <StatCard label="Total Simulations" value={stats.totalSimulations} accent="var(--color-success)" />
+        <StatCard label="Reports Generated" value={stats.totalReports} accent="var(--color-warning)" />
+        <StatCard label="Premium Users" value={stats.premiumUsers} accent="var(--color-secondary)"
           sub={stats.totalUsers ? `${Math.round((stats.premiumUsers / stats.totalUsers) * 100)}% conversion` : null}
         />
       </div>
@@ -113,7 +118,7 @@ export default function AdminAnalyticsPage() {
                   contentStyle={{ background: '#1e1e2e', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }}
                   labelStyle={{ color: '#f1f5f9' }}
                 />
-                <Line type="monotone" dataKey="count" stroke="#6366f1" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="count" stroke={chartColor} strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -130,7 +135,7 @@ export default function AdminAnalyticsPage() {
                   contentStyle={{ background: '#1e1e2e', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }}
                   labelStyle={{ color: '#f1f5f9' }}
                 />
-                <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="count" fill={chartColor} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

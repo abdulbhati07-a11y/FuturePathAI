@@ -40,7 +40,7 @@ export default function Hero() {
 
         <div className="hero__social-proof">
           <div className="hero__avatars">
-            {['#6366F1','#10B981','#F59E0B','#EF4444'].map((c, i) => (
+            {['var(--color-primary)','var(--color-success)','var(--color-warning)','var(--color-danger)'].map((c, i) => (
               <span key={i} className="hero__avatar-dot" style={{ background: c, zIndex: 4 - i }} />
             ))}
           </div>

@@ -7,13 +7,8 @@ import {
   Tooltip,
   XAxis, YAxis,
 } from 'recharts';
+import { cssVar } from '../utils/cssVar';
 import './StatsGrid.css';
-
-/* ── Colour helpers (read CSS vars at runtime so they respect themes) ─────── */
-function cssVar(name) {
-  if (typeof document === 'undefined') return '#6366F1';
-  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#6366F1';
-}
 
 /* ── Tiny Recharts tooltips ───────────────────────────────────────────────── */
 function MicroTooltip({ active, payload, formatter }) {
@@ -149,8 +144,8 @@ export default function StatsGrid({ stats, exclude = [] }) {
   const { stabilityIndex, riskVector, projectedCapital, pathAlpha } = stats;
 
   // Resolve theme colours at render time so charts match the active theme
-  const primary = cssVar('--color-primary') || '#6366F1';
-  const success = cssVar('--color-success') || '#10B981';
+  const primary = cssVar('--color-primary');
+  const success = cssVar('--color-success', '#34D399');
 
   // Data-driven card list so consumers can hide specific metrics via `exclude`.
   // The dashboard hides `pathAlpha` because the SpotlightHero owns that figure.

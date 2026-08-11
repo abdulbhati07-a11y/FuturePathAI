@@ -69,9 +69,9 @@ export default class ErrorBoundary extends Component {
           onClick={this.reset}
           style={{
             padding: '0.5rem 1.25rem', borderRadius: '8px',
-            border: '1px solid rgba(99,102,241,0.5)',
-            background: 'rgba(99,102,241,0.15)',
-            color: '#a5b4fc', cursor: 'pointer', fontSize: '0.82rem',
+            border: '1px solid color-mix(in srgb, var(--color-primary) 50%, transparent)',
+            background: 'color-mix(in srgb, var(--color-primary) 15%, transparent)',
+            color: 'var(--color-primary)', cursor: 'pointer', fontSize: '0.82rem',
           }}
         >
           Try again

@@ -35,7 +35,7 @@ function parseSalary(str) {
   return isNaN(num) ? 0 : Math.abs(num * multiplier);
 }
 
-const BAR_COLORS = ['#F87171', '#6366F1', '#34D399'];
+const BAR_COLORS = ['var(--color-danger)', 'var(--color-primary)', 'var(--color-success)'];
 
 export default function ScenarioComparison({ bestCase, mostLikely, worstCase }) {
   const chartData = [

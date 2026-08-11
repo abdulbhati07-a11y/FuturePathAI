@@ -139,7 +139,7 @@
   height: 36px;
   border-radius: 50%;
   overflow: hidden;
-  background: linear-gradient(135deg, var(--color-primary), #10B981);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
   color: var(--btn-primary-text);
   display: flex;
   align-items: center;

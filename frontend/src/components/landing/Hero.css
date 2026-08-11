@@ -18,12 +18,12 @@
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--color-primary);
-  background: rgba(56, 189, 248, 0.12);
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
   border: 1px solid var(--border-glow);
   border-radius: 20px;
   padding: 6px 16px;
   margin-bottom: 24px;
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--color-primary) 25%, transparent);
 }
 
 .hero__eyebrow-dot {
@@ -199,7 +199,7 @@
   transform: translate(-50%, -50%);
   width: 140%;
   height: 140%;
-  background: radial-gradient(circle, rgba(129, 140, 248, 0.2) 0%, transparent 60%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-primary) 20%, transparent) 0%, transparent 60%);
   z-index: 0;
   pointer-events: none;
   animation: pulse-glow 6s infinite alternate;
@@ -284,8 +284,8 @@
   flex-shrink: 0;
 }
 
-.hero__chip-dot--green  { background: var(--color-success); box-shadow: 0 0 8px rgba(52, 211, 153, 0.8); }
-.hero__chip-dot--purple { background: var(--color-primary); box-shadow: 0 0 8px rgba(129, 140, 248, 0.8); }
+.hero__chip-dot--green  { background: var(--color-success); box-shadow: 0 0 8px color-mix(in srgb, var(--color-success) 80%, transparent); }
+.hero__chip-dot--purple { background: var(--color-primary); box-shadow: 0 0 8px color-mix(in srgb, var(--color-primary) 80%, transparent); }
 
 @media (max-width: 900px) {
   .hero {

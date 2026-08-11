@@ -28,8 +28,8 @@
 }
 
 .admin__badge {
-  background: linear-gradient(135deg, #6366f1, #a78bfa);
-  color: #fff;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  color: var(--btn-primary-text);
   font-size: 0.7rem;
   font-weight: 700;
   padding: 0.2em 0.6em;
@@ -71,7 +71,7 @@
 
 .admin__stat-sub {
   font-size: 0.75rem;
-  color: #22c55e;
+  color: var(--color-success);
   margin-top: 0.2rem;
 }
 
@@ -152,7 +152,7 @@
   font-weight: 700;
   letter-spacing: 0.05em;
 }
-.admin__role-badge--admin   { background: rgba(99,102,241,0.2);  color: #a5b4fc; }
+.admin__role-badge--admin   { background: color-mix(in srgb, var(--color-primary) 20%, transparent);  color: var(--color-primary); }
 .admin__role-badge--premium { background: rgba(245,158,11,0.2);  color: #fcd34d; }
 .admin__role-badge--free    { background: rgba(148,163,184,0.15); color: #94a3b8; }
 
@@ -170,8 +170,8 @@
 .admin__forbidden button {
   padding: 0.5rem 1.25rem;
   border-radius: 8px;
-  border: 1px solid rgba(99,102,241,0.4);
-  background: rgba(99,102,241,0.1);
-  color: #a5b4fc;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 40%, transparent);
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  color: var(--color-primary);
   cursor: pointer;
 }
