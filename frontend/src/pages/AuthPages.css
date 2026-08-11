@@ -45,7 +45,7 @@
   border-radius: 20px;
   padding: 40px;
   box-shadow: var(--shadow-lg), 0 0 0 1px color-mix(in srgb, var(--color-primary) 8%, transparent);
-  animation: auth-card-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: auth-card-in 0.4s var(--ease-out) both;
 }
 
 @keyframes auth-card-in {
@@ -103,12 +103,12 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  background: color-mix(in srgb, var(--color-danger) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 25%, transparent);
   border-radius: 10px;
   padding: 11px 14px;
   font-size: 13px;
-  color: #EF4444;
+  color: var(--color-danger);
   margin-bottom: 16px;
 }
 

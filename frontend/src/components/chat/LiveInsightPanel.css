@@ -5,7 +5,7 @@
   padding: 16px;
   width: 220px;
   box-shadow: 0 4px 20px color-mix(in srgb, var(--color-primary) 15%, transparent), 0 0 0 1px color-mix(in srgb, var(--color-primary) 10%, transparent);
-  animation: insight-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: insight-in 0.3s var(--ease-out) both;
 }
 
 @keyframes insight-in {

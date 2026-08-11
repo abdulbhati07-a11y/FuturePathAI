@@ -55,6 +55,7 @@
 }
 
 .final-cta__button:focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid transparent;
   outline-offset: 4px;
+  box-shadow: var(--focus-ring);
 }

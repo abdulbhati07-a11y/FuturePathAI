@@ -80,7 +80,7 @@
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.25s var(--ease-out);
   white-space: nowrap;
   box-shadow: var(--shadow-sm);
 }
@@ -158,8 +158,9 @@
 /* ── Focus ────────────────────────────────────────────────── */
 .welcome-header__icon-btn:focus-visible,
 .welcome-header__new-btn:focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid transparent;
   outline-offset: 2px;
+  box-shadow: var(--focus-ring);
 }
 
 @media (prefers-reduced-motion: reduce) {

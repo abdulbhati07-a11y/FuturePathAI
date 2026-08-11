@@ -182,7 +182,7 @@
   color: var(--color-success);
 }
 .spotlight__trend--down {
-  background: rgba(239,68,68,0.15);
+  background: color-mix(in srgb, var(--color-danger) 15%, transparent);
   color: var(--color-danger, #ef4444);
 }
 .spotlight__trend--flat {

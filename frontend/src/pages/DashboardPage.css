@@ -37,8 +37,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  background: rgba(239, 68, 68, 0.08);
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  background: color-mix(in srgb, var(--color-danger) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 25%, transparent);
   border-radius: 12px;
   padding: 16px 20px;
   color: var(--color-danger);
@@ -49,8 +49,8 @@
 .dashboard-page__error-banner p { margin: 0; }
 
 .dashboard-page__error-banner button {
-  background: rgba(239, 68, 68, 0.12);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 30%, transparent);
   border-radius: 7px;
   color: var(--color-danger);
   font-size: 12.5px;
@@ -63,7 +63,7 @@
 }
 
 .dashboard-page__error-banner button:hover {
-  background: rgba(239, 68, 68, 0.2);
+  background: color-mix(in srgb, var(--color-danger) 20%, transparent);
 }
 
 /* ── Loading Skeletons ────────────────────────────────────── */

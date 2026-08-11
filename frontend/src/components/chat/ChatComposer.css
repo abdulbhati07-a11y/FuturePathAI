@@ -108,8 +108,9 @@
 .chat-composer__mic:focus-visible,
 .chat-composer__send:focus-visible,
 .chat-composer__chip:focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid transparent;
   outline-offset: 2px;
+  box-shadow: var(--focus-ring);
 }
 
 @media (prefers-reduced-motion: reduce) {

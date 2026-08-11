@@ -135,8 +135,9 @@
 
 .sim-card__review-btn:focus-visible,
 .recent-sims__view-all:focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid transparent;
   outline-offset: 2px;
+  box-shadow: var(--focus-ring);
 }
 
 @media (max-width: 900px) {

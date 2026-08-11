@@ -258,7 +258,7 @@
   height: 18px;
   border-radius: 50%;
   background: #fff;
-  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.2s var(--ease-standard);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
@@ -313,8 +313,8 @@
 }
 
 .settings-danger-btn {
-  background: rgba(239, 68, 68, 0.08);
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  background: color-mix(in srgb, var(--color-danger) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 25%, transparent);
   border-radius: 8px;
   padding: 8px 16px;
   font-size: 13px;
@@ -327,7 +327,7 @@
 }
 
 .settings-danger-btn:hover {
-  background: rgba(239, 68, 68, 0.14);
+  background: color-mix(in srgb, var(--color-danger) 14%, transparent);
 }
 
 /* Appearance */
@@ -509,7 +509,7 @@
   width: 100%;
   max-width: 420px;
   box-shadow: var(--shadow-lg);
-  animation: modal-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: modal-in 0.25s var(--ease-out) both;
 }
 
 @keyframes modal-in {
@@ -525,7 +525,7 @@
 }
 
 .settings-modal--danger {
-  border-color: rgba(239, 68, 68, 0.3);
+  border-color: color-mix(in srgb, var(--color-danger) 30%, transparent);
 }
 
 .settings-modal__title {
@@ -551,8 +551,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(239, 68, 68, 0.08);
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  background: color-mix(in srgb, var(--color-danger) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 25%, transparent);
   border-radius: 8px;
   padding: 10px 14px;
   color: var(--color-danger);

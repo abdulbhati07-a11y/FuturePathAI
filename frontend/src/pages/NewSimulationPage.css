@@ -94,7 +94,7 @@
     color-mix(in srgb, var(--color-primary) 16%, transparent),
     color-mix(in srgb, var(--color-primary) 6%, transparent));
   border: 1px solid color-mix(in srgb, var(--color-primary) 40%, transparent);
-  animation: report-cta-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: report-cta-in 0.35s var(--ease-out) both;
 }
 
 @keyframes report-cta-in {

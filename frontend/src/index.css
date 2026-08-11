@@ -218,9 +218,10 @@ a:hover { color: var(--color-primary-hover); text-decoration: underline; }
 
 /* ─── Focus ring ─────────────────────────────────────────────── */
 :focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 3px;
-  border-radius: 2px;
+  outline: 2px solid transparent;   /* kept for forced-colors / high-contrast */
+  outline-offset: 2px;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-xs);
 }
 
 /* ─── Utility animations ──────────────────────────────────────── */
@@ -256,7 +257,7 @@ a:hover { color: var(--color-primary-hover); text-decoration: underline; }
 
 /* Pages animate in on mount */
 .app-layout__page > * {
-  animation: fade-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: fade-in 0.35s var(--ease-out) both;
 }
 
 /* ─── Selection ──────────────────────────────────────────────── */

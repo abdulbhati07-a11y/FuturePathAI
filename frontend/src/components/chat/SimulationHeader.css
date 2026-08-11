@@ -75,8 +75,9 @@
 }
 
 .simulation-header__page-link:focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid transparent;
   outline-offset: 2px;
+  box-shadow: var(--focus-ring);
 }
 
 @media (max-width: 700px) {
@@ -115,8 +116,9 @@
 }
 
 .simulation-header__close:focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid transparent;
   outline-offset: 2px;
+  box-shadow: var(--focus-ring);
 }
 
 /* ── Progress bar ─────────────────────────────────────────── */
@@ -138,7 +140,7 @@
   height: 100%;
   border-radius: 4px;
   background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
-  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width 0.4s var(--ease-standard);
   box-shadow: 0 0 8px var(--color-primary-glow);
 }
 

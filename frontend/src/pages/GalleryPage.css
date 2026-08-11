@@ -131,8 +131,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  background: rgba(239,68,68,0.08);
-  border: 1px solid rgba(239,68,68,0.25);
+  background: color-mix(in srgb, var(--color-danger) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 25%, transparent);
   border-radius: 10px;
   padding: 14px 18px;
   color: var(--color-danger);
@@ -141,8 +141,8 @@
 
 .gallery-page__error button {
   margin-left: auto;
-  background: rgba(239,68,68,0.12);
-  border: 1px solid rgba(239,68,68,0.3);
+  background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 30%, transparent);
   border-radius: 6px;
   color: var(--color-danger);
   font-size: 12px;
@@ -216,8 +216,9 @@
 }
 
 .gallery-card:focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid transparent;
   outline-offset: 2px;
+  box-shadow: var(--focus-ring);
 }
 
 .gallery-card__top {

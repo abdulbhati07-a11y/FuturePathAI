@@ -73,8 +73,9 @@
 }
 
 .explored-alts__row:focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid transparent;
   outline-offset: 2px;
+  box-shadow: var(--focus-ring);
 }
 
 .explored-alts__row-body { flex: 1; min-width: 0; }
