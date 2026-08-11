@@ -27,7 +27,7 @@ export default function AdminAnalyticsPage() {
   const [status, setStatus] = useState('loading');
   const [error, setError] = useState('');
 
-  const isAdmin = user?.role === 'ADMIN' || user?.roles?.includes('admin');
+  const isAdmin = user?.roles?.includes('ADMIN') || user?.role === 'ADMIN';
 
   useEffect(() => {
     if (!isAdmin) { setStatus('forbidden'); return; }

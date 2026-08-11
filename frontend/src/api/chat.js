@@ -1,6 +1,10 @@
-import { supabase } from './supabase';
+import { apiClient } from './client';
 
 const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true';
+
+// Same-origin serverless API base (see src/api/client.js). Streaming needs a raw
+// fetch (apiClient buffers JSON), so we build the URL + auth header ourselves here.
+const API_BASE = `${import.meta.env.VITE_API_BASE_URL ?? ''}/api`;
 
 // ─── Mock data ───────────────────────────────────────────────────────────────
 const MOCK_REPLIES = [
@@ -40,21 +44,24 @@ export async function streamChatReply(simulationId, userMessage, history, onChun
     };
   }
 
-  // Get current session for profile data if needed
-  const { data: { session } } = await supabase.auth.getSession();
-  const userProfile = session?.user?.user_metadata || null;
-
+  // Backend expects { message, messages } and streams Server-Sent Events.
+  // messages = the full prior turn history; message = the newest user turn.
   const messages = [
     ...(history || []),
     ...(userMessage ? [{ role: 'user', content: userMessage }] : []),
   ];
 
+  const token = localStorage.getItem('accessToken');
+
   let res;
   try {
-    res = await fetch('/api/chat-stream', {
+    res = await fetch(`${API_BASE}/ai/simulations/${simulationId}/chat`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages, userProfile }),
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ message: userMessage, messages }),
     });
   } catch (err) {
     throw new Error(`Network error connecting to AI: ${err.message}`);
@@ -64,7 +71,7 @@ export async function streamChatReply(simulationId, userMessage, history, onChun
     let errMsg = `AI request failed (${res.status})`;
     try {
       const body = await res.json();
-      errMsg = body?.error || body?.message || errMsg;
+      errMsg = body?.message || body?.error || errMsg;
     } catch { /* ignore */ }
     throw new Error(errMsg);
   }
@@ -138,35 +145,10 @@ export async function createSimulation({ title, category }) {
   if (USE_MOCKS) {
     return { id: `sim_${Date.now()}`, title, category, status: 'DRAFT' };
   }
-  
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) throw new Error("Not authenticated");
-
-  const { data, error } = await supabase
-    .from('simulations')
-    .insert({
-      user_id: session.user.id,
-      title,
-      category,
-      status: 'DRAFT',
-    })
-    .select()
-    .single();
-
-  if (error) throw new Error(error.message);
-  return data;
+  return apiClient.post('/simulations', { title, category });
 }
 
 export async function saveDraftAndPause(simulationId) {
   if (USE_MOCKS) return { id: simulationId, status: 'DRAFT' };
-  
-  const { data, error } = await supabase
-    .from('simulations')
-    .update({ status: 'DRAFT' })
-    .eq('id', simulationId)
-    .select()
-    .single();
-
-  if (error) throw new Error(error.message);
-  return data;
+  return apiClient.patch(`/simulations/${simulationId}`, { status: 'DRAFT' });
 }

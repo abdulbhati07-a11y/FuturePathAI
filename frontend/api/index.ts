@@ -4,11 +4,14 @@ import jwt from 'jsonwebtoken';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import { v4 as uuid } from 'uuid';
+// Prisma 7's client is CommonJS; require() avoids ESM-interop issues in the Vercel
+// bundler. The type is imported separately (type-only import is erased at build).
+import type { PrismaClient as PrismaClientType } from '@prisma/client';
 // @ts-ignore — Prisma 7 client export
 const { PrismaClient } = require('@prisma/client');
 
 // ── DB ────────────────────────────────────────────────────────────────────────
-let _prisma: PrismaClient;
+let _prisma: PrismaClientType;
 function db() {
   if (!_prisma) {
     const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false }, max: 1 });
@@ -65,12 +68,41 @@ function calcScores(answers: any) {
 }
 
 // ── AI helpers ────────────────────────────────────────────────────────────────
-async function groqChat(messages: any[], stream = false): Promise<Response> {
-  return fetch('https://api.groq.com/openai/v1/chat/completions', {
+async function aiChat(messages: any[], stream = false): Promise<Response> {
+  // Primary: Groq (fast, free). Automatic fallback: Google Gemini via its
+  // OpenAI-compatible endpoint — identical request body and response shape
+  // (streaming + non-streaming), so no call site needs to change. Gemini only
+  // engages when GEMINI_API_KEY is set AND Groq is rate-limited/errors/unreachable.
+  const hasGemini    = !!process.env.GEMINI_API_KEY;
+  const GROQ_MODEL   = process.env.GROQ_MODEL   || 'llama-3.1-8b-instant';
+  const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-flash-latest';
+
+  const call = (url: string, key: string, model: string) => fetch(url, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${process.env.GROQ_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: 'llama-3.1-8b-instant', stream, messages }),
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model, stream, messages }),
   });
+
+  // 1) Primary — Groq
+  if (process.env.GROQ_API_KEY) {
+    try {
+      const r = await call('https://api.groq.com/openai/v1/chat/completions', process.env.GROQ_API_KEY, GROQ_MODEL);
+      if (r.ok || !hasGemini) return r;   // success, or no backup to fall over to
+    } catch (e) {
+      if (!hasGemini) throw e;            // network error and no backup → surface it
+    }
+  }
+
+  // 2) Backup — Gemini (OpenAI-compatible; same shapes as Groq)
+  if (hasGemini) {
+    return call('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', process.env.GEMINI_API_KEY!, GEMINI_MODEL);
+  }
+
+  // 3) Nothing configured — synthesize an error the callers' !res.ok / try-catch handle.
+  return new Response(
+    JSON.stringify({ error: 'No AI provider configured (set GROQ_API_KEY and/or GEMINI_API_KEY).' }),
+    { status: 503, headers: { 'Content-Type': 'application/json' } },
+  );
 }
 const SYSTEM = `You are FuturePath AI — an expert decision intelligence system. Guide users through life-decision simulations by asking one focused question at a time. Keep responses concise (2-4 sentences). After 4-5 exchanges say: "I'm ready to generate your full simulation report."`;
 
@@ -92,8 +124,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const url = req.url || '';
-  // Strip query string for matching
-  const path = url.split('?')[0].replace(/\/$/, '') || '/';
+  // Strip query string, then a leading /api so every route below is prefix-agnostic.
+  // The function is mounted at /api/* by vercel.json — stripping it here keeps the
+  // route table readable and lets the same handler run locally at either path.
+  const path = url.split('?')[0].replace(/^\/api(?=\/|$)/, '').replace(/\/$/, '') || '/';
   const p = (prefix: string) => path.startsWith(prefix);
   const seg = (n: number) => path.split('/')[n] || '';
   const prisma = db();
@@ -197,12 +231,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // ── /simulations/:id/results ──────────────────────────────────────────────
+    // Public when the sim is shared (isPublic); otherwise owner-only. This route
+    // backs the shareable /simulations/:id/results link, so it must not hard-require auth.
     if (p('/simulations/') && path.endsWith('/results') && req.method === 'GET') {
-      const u = auth(req, res); if (!u) return;
       const id = path.split('/')[2];
       const sim = await prisma.simulation.findUnique({ where: { id } });
       if (!sim) return err(res, 'Not found', 404);
-      if (sim.userId !== u.sub) return err(res, 'Forbidden', 403);
+      if (!sim.isPublic) {
+        const u = auth(req, res); if (!u) return;
+        if (sim.userId !== u.sub) return err(res, 'Forbidden', 403);
+      }
       const report = await prisma.report.findUnique({ where: { simulationId: id } });
       const recs: any = report ? (typeof report.recommendations === 'string' ? JSON.parse(report.recommendations) : report.recommendations) : {};
       const tl: any = report ? (typeof report.timeline === 'string' ? JSON.parse(report.timeline) : report.timeline) : [];
@@ -240,7 +278,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const message = req.body?.message || '';
       if (!message) return ok(res, { title: 'New Simulation', category: 'PERSONAL' });
       try {
-        const r = await groqChat([{ role:'user', content:`Based on this message, give a 2-5 word simulation title and one category from [CAREER,FINANCIAL,PERSONAL,BUSINESS,HEALTH,EDUCATION]. Return ONLY JSON: {"title":"...","category":"..."}. Message: "${message}"` }]);
+        const r = await aiChat([{ role:'user', content:`Based on this message, give a 2-5 word simulation title and one category from [CAREER,FINANCIAL,PERSONAL,BUSINESS,HEALTH,EDUCATION]. Return ONLY JSON: {"title":"...","category":"..."}. Message: "${message}"` }]);
         const d = await r.json();
         const parsed = JSON.parse(d.choices?.[0]?.message?.content?.replace(/```json|```/g,'').trim());
         const cats = ['CAREER','FINANCIAL','PERSONAL','BUSINESS','HEALTH','EDUCATION'];
@@ -264,7 +302,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const send = (type: string, value: any) => res.write(`data: ${JSON.stringify({type,value})}\n\n`);
       try {
-        const gr = await groqChat(payload, true);
+        const gr = await aiChat(payload, true);
         if (!gr.ok) { send('error', `AI error: ${gr.status}`); res.end(); return; }
         const reader = (gr.body as any).getReader(), dec = new TextDecoder();
         let buf = '';
@@ -310,6 +348,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return ok(res, { simulationUptime:+(99.95+Math.random()*0.04).toFixed(2), lastRecalc:`${Math.floor(Math.random()*120)+1}s ago` });
     }
 
+    // ── /admin/users (ADMIN only) ────────────────────────────────────────────
+    if (path === '/admin/users' && req.method === 'GET') {
+      const u = auth(req, res); if (!u) return;
+      const roles = Array.isArray(u.roles) ? u.roles : [];
+      if (!roles.includes('ADMIN')) return err(res, 'Forbidden — ADMIN role required', 403);
+      const users = await prisma.user.findMany({
+        orderBy: { createdAt: 'desc' }, take: 100,
+        include: { _count: { select: { simulations: true } } },
+      });
+      return ok(res, users.map((usr: any) => {
+        const r = Array.isArray(usr.roles) ? usr.roles : JSON.parse(usr.roles || '[]');
+        return {
+          id: usr.id, email: usr.email, firstName: usr.name, lastName: '',
+          role: r.includes('ADMIN') ? 'ADMIN' : r.includes('PREMIUM') ? 'PREMIUM' : 'USER',
+          _count: usr._count, createdAt: usr.createdAt,
+        };
+      }));
+    }
+
     // ── /reports/generate/:simulationId ──────────────────────────────────────
     if (p('/reports/generate/') && req.method === 'POST') {
       const u = auth(req, res); if (!u) return;
@@ -320,7 +377,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const answers = typeof sim.answers === 'string' ? JSON.parse(sim.answers) : sim.answers;
       let aiData: any;
       try {
-        const r = await groqChat([{ role:'user', content:`You are an expert AI advisor. Simulation: "${sim.title}" (${sim.category}). Answers: ${JSON.stringify(answers)}. Return ONLY raw JSON with keys: bestCase,mostLikely,worstCase,rightReasons,wrongReasons,timeline,alternatives.` }]);
+        const r = await aiChat([{ role:'user', content:`You are an expert AI advisor. Simulation: "${sim.title}" (${sim.category}). Answers: ${JSON.stringify(answers)}. Return ONLY raw JSON with keys: bestCase,mostLikely,worstCase,rightReasons,wrongReasons,timeline,alternatives.` }]);
         const d = await r.json();
         aiData = JSON.parse(d.choices?.[0]?.message?.content?.replace(/```json|```/g,'').trim());
       } catch {

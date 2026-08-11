@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { apiClient } from './client';
 
 const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true';
 
@@ -56,62 +56,19 @@ const mockResult = {
   ],
 };
 
+/**
+ * Fetch a simulation's finalized report. The backend endpoint is public when the
+ * simulation is shared (isPublic), so this works for both the owner and anyone
+ * opening a share link. The response is already fully shaped for the Results page.
+ */
 export async function getSimulationResult(simulationId) {
   if (USE_MOCKS) return mockResult;
-  
-  const { data: sim, error: simErr } = await supabase
-    .from('simulations')
-    .select('*')
-    .eq('id', simulationId)
-    .single();
-
-  if (simErr) throw new Error(simErr.message);
-
-  const { data: report, error: repErr } = await supabase
-    .from('reports')
-    .select('*')
-    .eq('simulation_id', simulationId)
-    .single();
-
-  if (repErr) throw new Error("Report not generated yet for this simulation");
-
-  const aiData = report.recommendations || {};
-
-  return {
-    id: sim.id,
-    title: sim.title,
-    isPublic: sim.is_public,
-    finalizedDate: new Date(report.updated_at).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    }),
-    overallRisk: sim.risk_score
-      ? sim.risk_score < 30
-        ? 'Low'
-        : sim.risk_score < 70
-          ? 'Moderate'
-          : 'High'
-      : 'Moderate',
-    riskLabel: 'Determined by AI',
-    confidence: sim.confidence_score || 94,
-    bestCase: aiData.bestCase,
-    mostLikely: aiData.mostLikely,
-    worstCase: aiData.worstCase,
-    rightReasons: aiData.rightReasons || [],
-    wrongReasons: aiData.wrongReasons || [],
-    timeline: report.timeline || aiData.timeline || [],
-    alternatives: aiData.alternatives || [],
-  };
+  return apiClient.get(`/simulations/${simulationId}/results`);
 }
 
+/** Toggle a simulation's public/shareable flag. */
 export async function toggleSimulationPublic(simulationId, isPublic) {
   if (USE_MOCKS) return { isPublic };
-  const { data, error } = await supabase
-    .from('simulations')
-    .update({ is_public: isPublic })
-    .eq('id', simulationId)
-    .select();
-  if (error) throw new Error(error.message);
-  return { isPublic: data[0].is_public };
+  const sim = await apiClient.patch(`/simulations/${simulationId}`, { isPublic });
+  return { isPublic: sim?.isPublic ?? isPublic };
 }

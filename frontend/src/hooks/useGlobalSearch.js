@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { supabase } from '../api/supabase';
+import { apiClient } from '../api/client';
 
 const DEBOUNCE_MS = 280;
 const MIN_CHARS   = 2;
@@ -44,15 +44,12 @@ export function useGlobalSearch(query) {
       setError('');
 
       try {
-        // Fetch a generous page of simulations; filter client-side by title
-        const { data, error } = await supabase
-          .from('simulations')
-          .select('*')
-          .limit(50);
+        // Fetch a generous page of the user's simulations; filter client-side by title.
+        // Backend returns { data: [...mapped sims], meta }.
+        const raw = await apiClient.get('/simulations?limit=50');
         if (cancelled.value) return;
-        if (error) throw error;
 
-        const list = data || [];
+        const list = Array.isArray(raw) ? raw : (raw?.data ?? []);
         const q = trimmed.toLowerCase();
 
         const simMatches = list

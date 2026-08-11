@@ -120,8 +120,9 @@ export default function NewSimulationPage() {
           atBottomRef.current = true;
 
           // Detect topic → create sim → stream response
-          const res = await fetch('/api/generate-topic', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: initialMessage }) });
-          const { title, category } = await res.json().catch(() => ({ title: 'New Simulation', category: 'PERSONAL' }));
+          const { title, category } = await apiClient
+            .post('/ai/generate-topic', { message: initialMessage })
+            .catch(() => ({ title: 'New Simulation', category: 'PERSONAL' }));
 
           const sim = await createSimulation({ title, category });
           if (!mounted) return;
@@ -278,8 +279,9 @@ export default function NewSimulationPage() {
     if (!simulationId) {
       setIsThinking(true);
       try {
-        const res = await fetch('/api/generate-topic', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: text.trim() }) });
-        const { title, category } = await res.json();
+        const { title, category } = await apiClient
+          .post('/ai/generate-topic', { message: text.trim() })
+          .catch(() => ({ title: 'New Simulation', category: 'PERSONAL' }));
         const sim = await createSimulation({ title, category });
         if (!abortRef.current) {
           setSimulationId(sim.id);

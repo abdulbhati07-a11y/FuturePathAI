@@ -15,9 +15,10 @@
  *   5. Throws so the caller's try/catch still works (shows error state)
  */
 
-// Empty string = same origin (works on Vercel where API and frontend share the same domain)
-// Falls back to localhost:3000 for local development with the NestJS server running
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '';
+// The serverless backend is mounted at /api/* on the same Vercel deployment as
+// the frontend, so the default base is same-origin `/api`. VITE_API_BASE_URL can
+// point at a different origin (e.g. a preview deployment) but must NOT include /api.
+const BASE_URL = `${import.meta.env.VITE_API_BASE_URL ?? ''}/api`;
 
 // Debounce flag — only fire the event once per "session expiry" cycle,
 // not once per concurrent in-flight request that all get 401.

@@ -2,7 +2,8 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef } f
 
 const AuthContext = createContext(null);
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+// Serverless backend lives at /api/* on the same origin (see src/api/client.js).
+const BASE_URL = `${import.meta.env.VITE_API_BASE_URL || ''}/api`;
 
 export function AuthProvider({ children }) {
   const [user,    setUser]    = useState(null);

@@ -6,6 +6,9 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  // No `url` here — Prisma 7 forbids it in the schema. At runtime the API passes a
+  // @prisma/adapter-pg driver adapter (see api/index.ts), and the migrate CLI reads
+  // the connection string from prisma.config.ts (DIRECT_URL → Supabase session pooler).
 }
 
 model User {
