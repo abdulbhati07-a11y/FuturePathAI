@@ -1,7 +1,6 @@
 {
-  "buildCommand": "npm install && npx prisma generate --schema=prisma/schema.prisma && npm run build",
+  "buildCommand": "npx prisma generate --schema=prisma/schema.prisma && npm run build",
   "outputDirectory": "dist",
-  "installCommand": "npm install",
   "framework": null,
   "functions": {
     "api/index.ts": {
