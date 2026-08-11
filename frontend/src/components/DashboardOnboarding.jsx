@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, BarChart2, Shield, GitBranch, ArrowRight, Play } from 'lucide-react';
+import { DECISION_CATEGORIES } from '../data/decisionLibrary';
 import './DashboardOnboarding.css';
 
 const FEATURES = [
@@ -23,12 +24,7 @@ const FEATURES = [
   },
 ];
 
-const SAMPLE_PROMPTS = [
-  'Should I accept a job offer in another city?',
-  'Is now the right time to start my own business?',
-  'Should I invest in real estate vs equities?',
-  'Should I go back to school for a Masters degree?',
-];
+const SAMPLE_PROMPTS = DECISION_CATEGORIES;
 
 export default function DashboardOnboarding({ firstName, onStart }) {
   const navigate = useNavigate();
@@ -92,19 +88,24 @@ export default function DashboardOnboarding({ firstName, onStart }) {
       {/* ── Try a prompt ──────────────────────────────────────────────────── */}
       <div className="onboarding__prompts">
         <p className="onboarding__prompts-label">Or try one of these decisions:</p>
-        <div className="onboarding__prompts-grid">
-          {SAMPLE_PROMPTS.map(prompt => (
-            <button
-              key={prompt}
-              type="button"
-              className="onboarding__prompt-chip"
-              onClick={() => handlePrompt(prompt)}
-            >
-              <span>{prompt}</span>
-              <ArrowRight size={13} strokeWidth={2} className="onboarding__prompt-arrow" />
-            </button>
-          ))}
-        </div>
+        {SAMPLE_PROMPTS.map(({ key, label, prompts }) => (
+          <div key={key} className="onboarding__prompts-group">
+            <p className="onboarding__prompts-cat">{label}</p>
+            <div className="onboarding__prompts-grid">
+              {prompts.map(prompt => (
+                <button
+                  key={prompt}
+                  type="button"
+                  className="onboarding__prompt-chip"
+                  onClick={() => handlePrompt(prompt)}
+                >
+                  <span>{prompt}</span>
+                  <ArrowRight size={13} strokeWidth={2} className="onboarding__prompt-arrow" />
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* ── Social proof strip ────────────────────────────────────────────── */}

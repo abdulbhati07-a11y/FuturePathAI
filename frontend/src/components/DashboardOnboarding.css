@@ -173,6 +173,22 @@
   margin: 0 0 14px;
 }
 
+.onboarding__prompts-group {
+  margin-top: 16px;
+}
+
+.onboarding__prompts-group:first-of-type {
+  margin-top: 0;
+}
+
+.onboarding__prompts-cat {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  margin: 0 0 8px;
+}
+
 .onboarding__prompts-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

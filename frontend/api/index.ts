@@ -108,7 +108,15 @@ async function aiChat(messages: any[], stream = false): Promise<Response> {
     { status: 503, headers: { 'Content-Type': 'application/json' } },
   );
 }
-const SYSTEM = `You are FuturePath AI — an expert decision intelligence system. Guide users through life-decision simulations by asking one focused question at a time. Keep responses concise (2-4 sentences). After 4-5 exchanges say: "I'm ready to generate your full simulation report."`;
+const SYSTEM = `You are FuturePath AI — an expert decision intelligence system. Guide users through life-decision simulations by asking one focused question at a time. Keep responses concise (2-4 sentences).
+
+After each question, offer 3-4 likely answers as lettered options on their own lines, formatted exactly as:
+A) <short answer>
+B) <short answer>
+C) <short answer>
+Keep each option under 60 characters. These render as tappable chips, but the user may also type their own answer, so never say "choose A/B/C" — phrase the question so a free-text reply works too. Do not add options to statements that aren't questions.
+
+After 4-5 exchanges say: "I'm ready to generate your full simulation report."`;
 
 function detectCategory(m: string) {
   const l = m.toLowerCase();
@@ -119,6 +127,17 @@ function detectCategory(m: string) {
   if (l.includes('health')||l.includes('medical')) return 'HEALTH';
   return 'PERSONAL';
 }
+
+// Fallback quick-answers per category — sent only when the AI omits its own
+// lettered options, so the composer still shows tappable chips.
+const QUICK_ANSWERS: Record<string, string[]> = {
+  CAREER:    ['Prioritize higher pay', 'Prioritize growth & learning', 'Weigh work-life balance', 'What are the biggest risks?'],
+  FINANCIAL: ['I want lower risk', 'I want higher returns', 'Keep it liquid & flexible', 'What is the downside scenario?'],
+  BUSINESS:  ['Start lean and test demand', 'Raise funding first', 'Keep my day job for now', 'What could go wrong?'],
+  EDUCATION: ['Study full-time', 'Study part-time while working', 'Consider the cost vs payoff', 'What are the alternatives?'],
+  HEALTH:    ['Focus on long-term outcome', 'Prioritize quality of life', 'Consider the recovery time', 'What are the trade-offs?'],
+  PERSONAL:  ['Tell me more about the risks', 'What is the best-case scenario?', 'Weigh the pros and cons', 'What should I do next?'],
+};
 
 // ══════════════════════════════════════════════════════════════════════════════
 // MAIN ROUTER
@@ -320,7 +339,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             try { const c = JSON.parse(d).choices?.[0]?.delta?.content; if(c) send('token',c); } catch{}
           }
         }
-        send('suggestions',['Tell me more about the risks','What is the best-case scenario?','What should I do next?']);
+        const convoText = [message, ...(Array.isArray(messages) ? messages.map((m:any)=>m.content) : [])].filter(Boolean).join(' ');
+        send('suggestions', QUICK_ANSWERS[detectCategory(convoText)] ?? QUICK_ANSWERS.PERSONAL);
         send('insight',{label:'LIVE PATH INSIGHT',message:'Your responses are shaping the probability model.'});
         send('done','');
       } catch(e:any) { send('error', e.message); }
