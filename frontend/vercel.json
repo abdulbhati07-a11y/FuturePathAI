@@ -1,15 +1,15 @@
 {
-  "buildCommand": "cd frontend && npm install && npx prisma generate --schema=prisma/schema.prisma && npm run build",
-  "outputDirectory": "frontend/dist",
-  "installCommand": "cd frontend && npm install",
+  "buildCommand": "npm install && npx prisma generate --schema=prisma/schema.prisma && npm run build",
+  "outputDirectory": "dist",
+  "installCommand": "npm install",
   "framework": null,
   "functions": {
-    "frontend/api/index.ts": {
+    "api/index.ts": {
       "maxDuration": 30
     }
   },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/frontend/api/index.ts" },
+    { "source": "/api/(.*)", "destination": "/api/index.ts" },
     { "source": "/(.*)",     "destination": "/index.html" }
   ],
   "headers": [
