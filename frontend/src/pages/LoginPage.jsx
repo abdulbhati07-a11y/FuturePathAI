@@ -28,12 +28,6 @@ export default function LoginPage() {
     }
   }
 
-  function fillDemo(e) {
-    e.preventDefault();
-    setEmail('admin@futurepath.ai');
-    setPassword('admin123');
-  }
-
   return (
     <div className="auth-page">
       {/* Background orbs */}
@@ -106,12 +100,6 @@ export default function LoginPage() {
             )}
           </button>
         </form>
-
-        <div className="auth-card__demo">
-          <button type="button" className="auth-card__demo-btn" onClick={fillDemo}>
-            Use demo credentials
-          </button>
-        </div>
 
         <p className="auth-card__switch">
           Don't have an account?{' '}
