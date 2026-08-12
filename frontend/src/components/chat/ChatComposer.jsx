@@ -1,9 +1,16 @@
-import { useState } from 'react';
+import { useState, useRef, forwardRef, useImperativeHandle } from 'react';
 import { Mic, ArrowUp } from 'lucide-react';
 import './ChatComposer.css';
 
-export default function ChatComposer({ suggestions, onSend, disabled }) {
+const ChatComposer = forwardRef(function ChatComposer({ suggestions, onSend, disabled }, ref) {
   const [value, setValue] = useState('');
+  const inputRef = useRef(null);
+
+  // Let the parent focus the text box (e.g. when the user taps the
+  // "type something else" starter in the opening message).
+  useImperativeHandle(ref, () => ({
+    focus: () => inputRef.current?.focus(),
+  }), []);
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -36,6 +43,7 @@ export default function ChatComposer({ suggestions, onSend, disabled }) {
           <Mic size={16} strokeWidth={2} />
         </button>
         <input
+          ref={inputRef}
           type="text"
           className="chat-composer__input"
           placeholder="Type your response..."
@@ -49,4 +57,6 @@ export default function ChatComposer({ suggestions, onSend, disabled }) {
       </form>
     </div>
   );
-}
+});
+
+export default ChatComposer;

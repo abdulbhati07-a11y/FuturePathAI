@@ -12,6 +12,44 @@ import './NewSimulationPage.css';
 
 const TOTAL_STEPS = 6;
 
+// Common decisions offered as one-tap chips in the opening message. Keep the
+// list to five so that — together with the "something else" option — the total
+// stays within the A–F range the option-chip parser supports.
+const SIMULATION_STARTERS = [
+  'Should I change careers or switch jobs?',
+  'Should I start a business or side hustle?',
+  'Should I make a big financial move (invest, buy a home)?',
+  'Should I go back to school or get a degree?',
+  'Should I relocate to a new city or country?',
+];
+const SOMETHING_ELSE = "Something else — I'll type it below";
+
+// One fixed, professional greeting shown every time the chat opens. It is a
+// static message (never AI-generated), so it is identical on every open and
+// never invents a decision the user didn't state. The lettered lines are
+// rendered as tappable chips and stripped from the body text.
+const OPENING_MESSAGE = [
+  '👋 **Welcome to FuturePath AI.**',
+  'I simulate how a major life or career decision could unfold — the likely outcomes, the risks, and the trade-offs — then turn it into a clear, personalized report.',
+  '',
+  '**What would you like to simulate?** Pick a common decision below, or type your own.',
+  '',
+  ...SIMULATION_STARTERS.map((s, i) => `${String.fromCharCode(65 + i)}) ${s}`),
+  `${String.fromCharCode(65 + SIMULATION_STARTERS.length)}) ${SOMETHING_ELSE}`,
+].join('\n');
+
+/** True when a resumable draft exists in localStorage (so we don't clobber it). */
+function hasSavedDraft() {
+  try {
+    const saved = localStorage.getItem('fp_sim_draft');
+    if (!saved) return false;
+    const { simId, msgs } = JSON.parse(saved);
+    return Boolean(simId && msgs?.length > 0);
+  } catch {
+    return false;
+  }
+}
+
 function ts() {
   return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 }
@@ -47,6 +85,7 @@ export default function NewSimulationPage() {
   const scrollRef    = useRef(null);
   const atBottomRef  = useRef(true);
   const abortRef     = useRef(false);
+  const composerRef  = useRef(null);
 
   // In React 18 Strict Mode, components mount -> unmount -> remount.
   // We must reset the ref on mount so the chat isn't permanently aborted.
@@ -99,7 +138,9 @@ export default function NewSimulationPage() {
     }
   }, [messages]);
 
-  // ── Open the session: create sim + get first AI greeting ──────────────────
+  // ── Open the session ──────────────────────────────────────────────────────
+  // Normal open shows a fixed greeting (no AI call). A prompt-chip open starts
+  // the AI turn immediately; a saved draft is restored by the effect above.
   useEffect(() => {
     let mounted = true;
 
@@ -129,12 +170,19 @@ export default function NewSimulationPage() {
           setSimulationId(sim.id);
 
           await runStreamTurn(sim.id, initialMessage, []);
+        } else if (hasSavedDraft()) {
+          // A previous draft is being restored by the effect above — leave it
+          // alone. Don't create a new session or overwrite it with the greeting.
+          return;
         } else {
-          // Normal open: create placeholder sim + stream opening greeting
-          const sim = await createSimulation({ title: 'New Simulation', category: 'PERSONAL' });
-          if (!mounted) return;
-          setSimulationId(sim.id);
-          await runStreamTurn(sim.id, null, []);
+          // Normal open: show one fixed, professional greeting with quick-pick
+          // options. We deliberately do NOT create a simulation or call the AI
+          // yet — the session is created lazily on the user's first real
+          // message (see handleSend). This guarantees the opening is identical
+          // every time and never assumes a decision the user hasn't made.
+          setMessages([
+            { id: 'a_opening', role: 'assistant', content: OPENING_MESSAGE, timestamp: ts() },
+          ]);
         }
       } catch (err) {
         if (!mounted) return;
@@ -298,6 +346,18 @@ export default function NewSimulationPage() {
     }
   }
 
+  // ── Option chip clicked ────────────────────────────────────────────────────
+  // Most chips send their text as the user's answer. The "something else"
+  // chip is different: it just focuses the composer so the user can type a
+  // decision that isn't in the common list.
+  function handleOptionClick(text) {
+    if (text === SOMETHING_ELSE) {
+      composerRef.current?.focus();
+      return;
+    }
+    handleSend(text);
+  }
+
   // ── Resume an interrupted turn ─────────────────────────────────────────────
   function handleResume() {
     if (!resumeCtx) return;
@@ -425,7 +485,7 @@ export default function NewSimulationPage() {
                 showOptions={
                   m.role === 'assistant' && idx === messages.length - 1 && !busy
                 }
-                onOptionClick={handleSend}
+                onOptionClick={handleOptionClick}
               />
             ))}
           </div>
@@ -487,6 +547,7 @@ export default function NewSimulationPage() {
             ) : (
               <>
                 <ChatComposer
+                  ref={composerRef}
                   suggestions={suggestions}
                   onSend={handleSend}
                   disabled={busy}
