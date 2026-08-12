@@ -1,0 +1,7 @@
+# FuturePath AI — https://www.futurepathai.org
+User-agent: *
+Allow: /
+# Authenticated app shell has no indexable content
+Disallow: /app/
+
+Sitemap: https://www.futurepathai.org/sitemap.xml

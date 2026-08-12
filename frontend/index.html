@@ -11,6 +11,12 @@
       content="FuturePath AI simulates the outcomes of your biggest life and career decisions — chat through a scenario, compare paths, and get a clear, personalized report."
     />
     <meta name="theme-color" content="#32213a" />
+    <meta name="robots" content="index, follow" />
+    <meta name="author" content="FuturePath AI" />
+    <meta
+      name="keywords"
+      content="FuturePath AI, decision simulator, career decision, life decision, AI advisor, scenario planning, what-if simulation"
+    />
 
     <!-- Canonical identity: this product lives at futurepathai.org -->
     <link rel="canonical" href="https://www.futurepathai.org/" />
@@ -24,14 +30,49 @@
       content="Simulate the outcomes of your biggest life and career decisions — compare paths and get a clear, personalized report."
     />
     <meta property="og:url" content="https://www.futurepathai.org/" />
+    <meta property="og:image" content="https://www.futurepathai.org/images/hero_mockup.png" />
 
     <!-- Twitter -->
-    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="FuturePath AI" />
     <meta
       name="twitter:description"
       content="Simulate the outcomes of your biggest life and career decisions — compare paths and get a clear, personalized report."
     />
+    <meta name="twitter:image" content="https://www.futurepathai.org/images/hero_mockup.png" />
+
+    <!-- Structured data: tells search engines the brand, site, and product identity -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://www.futurepathai.org/#organization",
+          "name": "FuturePath AI",
+          "url": "https://www.futurepathai.org/",
+          "logo": "https://www.futurepathai.org/favicon.svg",
+          "description": "FuturePath AI simulates the outcomes of your biggest life and career decisions."
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://www.futurepathai.org/#website",
+          "name": "FuturePath AI",
+          "url": "https://www.futurepathai.org/",
+          "inLanguage": "en",
+          "publisher": { "@id": "https://www.futurepathai.org/#organization" }
+        },
+        {
+          "@type": "WebApplication",
+          "name": "FuturePath AI",
+          "url": "https://www.futurepathai.org/",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web",
+          "description": "Chat through a major life or career decision and get a clear, personalized report comparing the likely outcomes, risks, and trade-offs."
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>
