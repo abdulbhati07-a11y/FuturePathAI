@@ -140,7 +140,7 @@
   height: 100%;
   border-radius: 4px;
   background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
-  transition: width 0.4s var(--ease-standard);
+  transition: width var(--dur-slow) var(--ease-out);
   box-shadow: 0 0 8px var(--color-primary-glow);
 }
 

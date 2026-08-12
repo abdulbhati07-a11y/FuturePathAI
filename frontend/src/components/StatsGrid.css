@@ -134,7 +134,7 @@
 .stat-card__risk-gauge-fill {
   height: 100%;
   border-radius: 4px;
-  transition: width 1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: width var(--dur-slow) var(--ease-out);
   box-shadow: 0 0 6px currentColor;
 }
 
