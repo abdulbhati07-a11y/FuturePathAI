@@ -311,7 +311,7 @@ export default function ResultsPage() {
           {/* PDF footer */}
           <div className="results-page__pdf-footer pdf-only">
             <span>© {new Date().getFullYear()} FuturePath AI — Confidential Report</span>
-            <span>futurepath.ai</span>
+            <span>futurepathai.org</span>
           </div>
         </div>
       </main>

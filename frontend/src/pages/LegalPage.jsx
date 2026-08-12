@@ -26,7 +26,7 @@ const CONTENT = {
       },
       {
         heading: 'Contact Us',
-        body: 'If you have any questions about this Privacy Policy, please contact us at privacy@futurepath.ai.',
+        body: 'If you have any questions about this Privacy Policy, please contact us at privacy@futurepathai.org.',
       },
     ],
   },
@@ -74,7 +74,7 @@ const CONTENT = {
       },
       {
         heading: 'Contact Us',
-        body: 'For questions about our cookie policy, please contact us at privacy@futurepath.ai.',
+        body: 'For questions about our cookie policy, please contact us at privacy@futurepathai.org.',
       },
     ],
   },
