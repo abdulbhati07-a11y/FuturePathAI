@@ -401,7 +401,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const answers = typeof sim.answers === 'string' ? JSON.parse(sim.answers) : sim.answers;
       let aiData: any;
       try {
-        const r = await aiChat([{ role:'user', content:`You are an expert AI advisor. Simulation: "${sim.title}" (${sim.category}). Answers: ${JSON.stringify(answers)}. Return ONLY raw JSON with keys: bestCase,mostLikely,worstCase,rightReasons,wrongReasons,timeline,alternatives.` }]);
+        const r = await aiChat([{ role:'user', content:`You are an expert AI advisor. Simulation: "${sim.title}" (${sim.category}). Answers: ${JSON.stringify(answers)}. Return ONLY raw JSON, no prose, with EXACTLY these keys and shapes: bestCase/mostLikely/worstCase are objects {label,probability(number),title(string),description(string),salaryDelta(string),satisfaction(string)}; rightReasons and wrongReasons are arrays of 3 plain strings (NOT objects); timeline is an array of {id,label,sublabel} (all strings); alternatives is an array of {id,title,subtitle,score(number 0-100)}.` }]);
         const d = await r.json();
         aiData = JSON.parse(d.choices?.[0]?.message?.content?.replace(/```json|```/g,'').trim());
       } catch {

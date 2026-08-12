@@ -1,17 +1,31 @@
 import { CheckCircle2, AlertTriangle, ChevronDown, BarChart2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { toText, toArray } from './reportContent';
 import './ProsConsPanel.css';
 
 function ReasonsList({ items, variant }) {
   const Icon = variant === 'right' ? CheckCircle2 : AlertTriangle;
+  const list = toArray(items);
   return (
     <ul className={`reasons-list reasons-list--${variant}`}>
-      {items.map((item, i) => (
-        <li key={i}>
-          <Icon size={15} strokeWidth={2} />
-          <span>{item}</span>
-        </li>
-      ))}
+      {list.map((item, i) => {
+        // A reason may be a plain string or an object like { reason, description }.
+        const primary = toText(item, ['reason', 'title', 'text', 'label']);
+        const detail =
+          item && typeof item === 'object' && typeof item.description === 'string'
+            && item.description.trim() && item.description !== primary
+            ? item.description
+            : '';
+        return (
+          <li key={i}>
+            <Icon size={15} strokeWidth={2} />
+            <span className="reasons-list__text">
+              <span>{primary || detail}</span>
+              {primary && detail && <span className="reasons-list__detail">{detail}</span>}
+            </span>
+          </li>
+        );
+      })}
     </ul>
   );
 }

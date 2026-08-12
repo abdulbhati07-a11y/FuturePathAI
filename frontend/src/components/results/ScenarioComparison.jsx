@@ -1,9 +1,17 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell } from 'recharts';
+import { toText, toNumber } from './reportContent';
 import './ScenarioComparison.css';
 
 function ScenarioCard({ scenario, isFeatured }) {
   if (!scenario) return null;
-  const { label, probability, title, description, salaryDelta, satisfaction } = scenario;
+  // Fields come from the AI; coerce each to a primitive so a stray nested
+  // object can't crash the render.
+  const label = toText(scenario.label);
+  const probability = toNumber(scenario.probability);
+  const title = toText(scenario.title, ['title', 'headline', 'summary']);
+  const description = toText(scenario.description, ['description', 'detail', 'text']);
+  const salaryDelta = toText(scenario.salaryDelta, ['salaryDelta', 'salary', 'value']);
+  const satisfaction = toText(scenario.satisfaction, ['satisfaction', 'score', 'value']);
 
   return (
     <div className={`scenario-card ${isFeatured ? 'scenario-card--featured' : ''}`}>
