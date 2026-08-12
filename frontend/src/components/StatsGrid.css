@@ -14,7 +14,7 @@
 .stat-card {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 14px 16px 12px;
   display: flex;
   flex-direction: column;
@@ -106,7 +106,7 @@
 .stat-chart__tooltip {
   background: var(--bg-surface-elevated);
   border: 1px solid var(--border-subtle);
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   padding: 4px 9px;
   font-size: 11.5px;
   font-weight: 700;

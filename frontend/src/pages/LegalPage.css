@@ -34,7 +34,7 @@
 .legal-page__card {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: 18px;
+  border-radius: var(--radius-xl);
   padding: 40px;
 }
 

@@ -1,7 +1,7 @@
 .explored-alts {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 20px 24px;
   margin-bottom: 20px;
 }
@@ -58,7 +58,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 14px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-subtle);
   cursor: pointer;
   width: 100%;

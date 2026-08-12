@@ -4,7 +4,7 @@
   overflow: hidden;
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
 }
 
 .skeleton::after {
@@ -27,6 +27,6 @@
 }
 
 .skeleton-chart {
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   height: 200px;
 }

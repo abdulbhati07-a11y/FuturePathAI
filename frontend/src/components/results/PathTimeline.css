@@ -1,7 +1,7 @@
 .path-timeline {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 20px 24px 24px;
   margin-bottom: 20px;
 }

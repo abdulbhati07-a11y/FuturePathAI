@@ -56,7 +56,7 @@
   justify-content: center;
   gap: 12px;
   padding: 10px 14px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: color-mix(in srgb, #e67e22 12%, transparent);
   border: 1px solid color-mix(in srgb, #e67e22 40%, transparent);
 }
@@ -68,7 +68,7 @@
 
 .new-sim-page__resume-btn {
   padding: 6px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--color-primary);
   background: transparent;
   color: var(--color-primary);
@@ -89,7 +89,7 @@
   justify-content: space-between;
   gap: 14px;
   padding: 14px 18px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: linear-gradient(135deg,
     color-mix(in srgb, var(--color-primary) 16%, transparent),
     color-mix(in srgb, var(--color-primary) 6%, transparent));
@@ -111,7 +111,7 @@
 .new-sim-page__report-cta-btn {
   flex-shrink: 0;
   padding: 10px 18px;
-  border-radius: 9px;
+  border-radius: var(--radius-sm);
   border: none;
   background: var(--color-primary);
   color: var(--btn-primary-text);
@@ -153,7 +153,7 @@
   padding: 16px 20px;
   background: color-mix(in srgb, var(--color-success) 10%, transparent);
   border: 1px solid color-mix(in srgb, var(--color-success) 30%, transparent);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
 }
 
 .new-sim-page__complete-msg {
@@ -169,7 +169,7 @@
   background: var(--color-primary);
   color: var(--btn-primary-text);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -223,7 +223,7 @@
   gap: 7px;
   background: color-mix(in srgb, var(--color-primary) 12%, transparent);
   border: 1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
-  border-radius: 9px;
+  border-radius: var(--radius-sm);
   padding: 10px 18px;
   font-size: 13px;
   font-weight: 700;

@@ -39,7 +39,7 @@
   gap: 16px;
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 16px 20px;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
@@ -68,7 +68,7 @@
   display: inline-flex;
   align-self: flex-start;
   padding: 3px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.03em;
@@ -118,7 +118,7 @@
   background: var(--bg-surface-elevated);
   color: var(--text-primary);
   border: 1px solid var(--border-subtle);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 9px 18px;
   font-size: 13px;
   font-weight: 600;
@@ -162,7 +162,7 @@
   gap: 20px;
   background: var(--bg-surface);
   border: 1.5px dashed var(--border-strong);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 24px 28px;
   animation: fade-in 0.3s ease both;
 }
@@ -175,7 +175,7 @@
 .recent-sims__empty-icon {
   width: 48px;
   height: 48px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--color-primary) 10%, transparent);
   color: var(--color-primary);
   display: flex;
@@ -207,7 +207,7 @@
   background: var(--color-primary);
   color: var(--btn-primary-text);
   border: none;
-  border-radius: 9px;
+  border-radius: var(--radius-sm);
   padding: 10px 18px;
   font-size: 13px;
   font-weight: 700;

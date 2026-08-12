@@ -1,7 +1,7 @@
 .live-insight {
   background: var(--bg-surface-elevated);
   border: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 16px;
   width: 220px;
   box-shadow: 0 4px 20px color-mix(in srgb, var(--color-primary) 15%, transparent), 0 0 0 1px color-mix(in srgb, var(--color-primary) 10%, transparent);

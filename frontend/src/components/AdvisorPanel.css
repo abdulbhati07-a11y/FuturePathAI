@@ -9,7 +9,7 @@
 .advisor-panel__card {
   background: var(--bg-surface-elevated);
   border: 1px solid var(--border-subtle);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 20px;
   color: var(--text-primary);
   display: flex;
@@ -30,7 +30,7 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  border-radius: 9px;
+  border-radius: var(--radius-sm);
   background: var(--color-primary);
   color: var(--btn-primary-text);
   flex-shrink: 0;
@@ -73,7 +73,7 @@
 .advisor-panel__checklist-box {
   background: color-mix(in srgb, var(--bg-root) 40%, transparent);
   border: 1px solid var(--border-subtle);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 14px;
 }
 
@@ -120,7 +120,7 @@
   background: var(--color-primary);
   color: var(--btn-primary-text);
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 12px;
   font-size: 13.5px;
   font-weight: 700;

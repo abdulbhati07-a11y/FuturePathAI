@@ -47,7 +47,7 @@
 }
 
 .chat-message__bubble {
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 14px 16px;
   font-size: 13.5px;
   line-height: 1.55;
@@ -97,7 +97,7 @@
   gap: 10px;
   text-align: left;
   padding: 9px 14px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-subtle);
   background: var(--bg-surface);
   color: var(--text-primary);
@@ -117,7 +117,7 @@
   flex-shrink: 0;
   width: 20px;
   height: 20px;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   display: flex;
   align-items: center;
   justify-content: center;
