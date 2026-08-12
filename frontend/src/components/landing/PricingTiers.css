@@ -23,7 +23,7 @@
 .pricing-card {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   padding: 40px;
   position: relative;
   transition: transform 0.3s ease, border-color 0.3s ease;
@@ -57,7 +57,7 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
   padding: 4px 12px;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   white-space: nowrap;
 }
 
@@ -113,7 +113,7 @@
 .pricing-card__cta {
   width: 100%;
   padding: 14px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;

@@ -10,9 +10,9 @@
 .feature-grid__card {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 32px;
-  transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), border-color 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: transform var(--dur-med) var(--ease-standard), box-shadow var(--dur-med) var(--ease-standard), border-color var(--dur-med) var(--ease-standard);
   position: relative;
   overflow: hidden;
 }
@@ -26,7 +26,7 @@
   height: 100%;
   background: radial-gradient(circle at top right, color-mix(in srgb, var(--color-primary) 12%, transparent), transparent 70%);
   opacity: 0;
-  transition: opacity 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: opacity var(--dur-med) var(--ease-standard);
 }
 
 .feature-grid__card:hover {
@@ -45,7 +45,7 @@
   justify-content: center;
   width: 48px;
   height: 48px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--color-primary) 15%, transparent);
   color: var(--color-primary);
   margin-bottom: 24px;

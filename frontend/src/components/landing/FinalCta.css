@@ -36,7 +36,7 @@
   background: var(--color-primary);
   color: var(--btn-primary-text);
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 16px 32px;
   font-size: 16px;
   font-weight: 700;
