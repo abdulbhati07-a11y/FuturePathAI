@@ -2,7 +2,7 @@ import { useState, useRef, forwardRef, useImperativeHandle } from 'react';
 import { Mic, ArrowUp } from 'lucide-react';
 import './ChatComposer.css';
 
-const ChatComposer = forwardRef(function ChatComposer({ suggestions, onSend, disabled }, ref) {
+const ChatComposer = forwardRef(function ChatComposer({ onSend, disabled }, ref) {
   const [value, setValue] = useState('');
   const inputRef = useRef(null);
 
@@ -22,22 +22,6 @@ const ChatComposer = forwardRef(function ChatComposer({ suggestions, onSend, dis
 
   return (
     <div className="chat-composer">
-      {suggestions && suggestions.length > 0 && (
-        <div className="chat-composer__suggestions">
-          {suggestions.map((s) => (
-            <button
-              key={s}
-              type="button"
-              className="chat-composer__chip"
-              disabled={disabled}
-              onClick={() => onSend(s)}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-      )}
-
       <form className="chat-composer__bar" onSubmit={handleSubmit}>
         <button type="button" className="chat-composer__mic" aria-label="Voice input (coming soon)" disabled={disabled} title="Voice input — coming soon">
           <Mic size={16} strokeWidth={2} />

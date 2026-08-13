@@ -548,7 +548,6 @@ export default function NewSimulationPage() {
               <>
                 <ChatComposer
                   ref={composerRef}
-                  suggestions={suggestions}
                   onSend={handleSend}
                   disabled={busy}
                 />
