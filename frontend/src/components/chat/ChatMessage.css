@@ -171,3 +171,30 @@
     max-width: 88%;
   }
 }
+
+@media (max-width: 640px) {
+  .chat-message {
+    max-width: 92%;
+  }
+
+  .chat-message__options {
+    max-height: 120px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-shrink: 0;
+  }
+
+  .chat-message__option-chip {
+    padding: 6px 10px;
+    font-size: 11.5px;
+  }
+
+  .chat-message__bubble {
+    padding: 10px 13px;
+    font-size: 13px;
+  }
+
+  .chat-message__bubble-col {
+    gap: 4px;
+  }
+}

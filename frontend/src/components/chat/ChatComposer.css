@@ -119,3 +119,33 @@
     transition: none;
   }
 }
+
+@media (max-width: 640px) {
+  .chat-composer {
+    gap: 8px;
+  }
+
+  .chat-composer__suggestions {
+    gap: 6px;
+  }
+
+  .chat-composer__chip {
+    padding: 5px 10px;
+    font-size: 11.5px;
+  }
+
+  .chat-composer__bar {
+    gap: 6px;
+    padding: 6px 8px;
+  }
+
+  .chat-composer__mic,
+  .chat-composer__send {
+    width: 32px;
+    height: 32px;
+  }
+
+  .chat-composer__input {
+    font-size: 13px;
+  }
+}

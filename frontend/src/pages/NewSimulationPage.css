@@ -41,6 +41,7 @@
   flex-direction: column;
   gap: 10px;
   padding-top: 8px;
+  flex-shrink: 0;
 }
 
 .new-sim-page__insight-slot {
@@ -202,6 +203,28 @@
   .new-sim-page__complete-bar {
     flex-direction: column;
     align-items: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .new-sim-page__body {
+    padding: 8px;
+  }
+
+  .new-sim-page__messages {
+    min-height: 0;
+    padding: 4px 2px 4px;
+    flex-shrink: 1;
+  }
+
+  .new-sim-page__footer {
+    gap: 4px;
+    padding-top: 2px;
+    flex-shrink: 0;
+  }
+
+  .new-sim-page__action-row {
+    flex-wrap: wrap;
   }
 }
 
