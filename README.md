@@ -169,3 +169,5 @@ else to the SPA's `index.html`.
 ## 📄 License
 
 MIT
+
+Designed, engineered, and developed by Muhammad Abdullah Bhatti.
