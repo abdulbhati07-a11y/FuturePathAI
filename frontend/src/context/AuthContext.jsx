@@ -52,12 +52,24 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = useCallback(async (email, password) => {
-    const res = await fetch(`${BASE_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-    const body = await res.json();
+    let res;
+    try {
+      res = await fetch(`${BASE_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+    } catch (e) {
+      throw new Error('Network error — please check your connection.');
+    }
+
+    let body;
+    try {
+      body = await res.json();
+    } catch {
+      throw new Error(`Server returned a non-JSON response (Status: ${res.status}). Ensure the API backend is running.`);
+    }
+
     if (!res.ok || body.success === false) {
       throw new Error(body.message || 'Login failed');
     }
@@ -69,12 +81,24 @@ export function AuthProvider({ children }) {
   }, []);
 
   const register = useCallback(async (name, email, password) => {
-    const res = await fetch(`${BASE_URL}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password }),
-    });
-    const body = await res.json();
+    let res;
+    try {
+      res = await fetch(`${BASE_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password }),
+      });
+    } catch (e) {
+      throw new Error('Network error — please check your connection.');
+    }
+
+    let body;
+    try {
+      body = await res.json();
+    } catch {
+      throw new Error(`Server returned a non-JSON response (Status: ${res.status}). Ensure the API backend is running.`);
+    }
+
     if (!res.ok || body.success === false) {
       throw new Error(body.message || 'Registration failed');
     }

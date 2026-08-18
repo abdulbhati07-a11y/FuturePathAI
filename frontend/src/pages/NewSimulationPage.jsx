@@ -38,17 +38,6 @@ const OPENING_MESSAGE = [
   `${String.fromCharCode(65 + SIMULATION_STARTERS.length)}) ${SOMETHING_ELSE}`,
 ].join('\n');
 
-/** True when a resumable draft exists in localStorage (so we don't clobber it). */
-function hasSavedDraft() {
-  try {
-    const saved = localStorage.getItem('fp_sim_draft');
-    if (!saved) return false;
-    const { simId, msgs } = JSON.parse(saved);
-    return Boolean(simId && msgs?.length > 0);
-  } catch {
-    return false;
-  }
-}
 
 function ts() {
   return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
@@ -94,20 +83,29 @@ export default function NewSimulationPage() {
     return () => { abortRef.current = true; };
   }, []);
 
-  // ── Restore draft from localStorage on mount ───────────────────────────
+  // ── Handle stranded draft on mount ───────────────────────────
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('fp_sim_draft');
-      if (!saved) return;
-      const { simId, msgs, step } = JSON.parse(saved);
-      if (simId && msgs?.length > 0) {
-        setSimulationId(simId);
-        setMessages(msgs);
-        setCurrentStep(step ?? msgs.filter(m => m.role === 'user').length);
+    async function processStrandedDraft() {
+      try {
+        const saved = localStorage.getItem('fp_sim_draft');
+        if (!saved) return;
+        const { simId, msgs } = JSON.parse(saved);
+        if (simId && msgs?.length > 0) {
+          // Convert msgs to answers map for the backend
+          const answers = msgs.filter(m => m.role === 'user').reduce((acc, m, i) => {
+             acc[`q${i}`] = m.content;
+             return acc;
+          }, {});
+          
+          await apiClient.patch(`/simulations/${simId}`, { answers, status: 'IN_PROGRESS' }).catch(() => null);
+        }
+      } catch {
+        // corrupted draft — ignore
+      } finally {
+        localStorage.removeItem('fp_sim_draft');
       }
-    } catch {
-      // corrupted draft — ignore
     }
+    processStrandedDraft();
   }, []);
 
   // ── Autosave draft to localStorage after each completed step ──────────
@@ -170,10 +168,6 @@ export default function NewSimulationPage() {
           setSimulationId(sim.id);
 
           await runStreamTurn(sim.id, initialMessage, []);
-        } else if (hasSavedDraft()) {
-          // A previous draft is being restored by the effect above — leave it
-          // alone. Don't create a new session or overwrite it with the greeting.
-          return;
         } else {
           // Normal open: show one fixed, professional greeting with quick-pick
           // options. We deliberately do NOT create a simulation or call the AI
