@@ -1,6 +1,6 @@
 import { CheckCircle2, AlertTriangle, ChevronDown, BarChart2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { toText, toArray } from './reportContent';
+import { toText, toArray, toScore, parseMoney, formatUSD } from './reportContent';
 import './ProsConsPanel.css';
 
 function ReasonsList({ items, variant }) {
@@ -30,16 +30,52 @@ function ReasonsList({ items, variant }) {
   );
 }
 
-// Static illustrative figures that appear when the toggle is clicked
-const FIGURES = [
-  { label: 'Decision Confidence', value: '94.2%', note: 'Based on 3 scenario branches' },
-  { label: 'Upside Probability',  value: '22%',   note: 'Best-case scenario likelihood' },
-  { label: 'Downside Risk',       value: '15%',   note: 'Worst-case scenario likelihood' },
-  { label: 'Net Expected Value',  value: '+€34k', note: 'Across all weighted outcomes' },
-];
+/**
+ * Facts & Figures, derived from this simulation's own report — never static.
+ * Any figure the report doesn't support is dropped rather than filled in, so an
+ * incomplete report shows fewer cards instead of invented ones.
+ */
+function buildFigures({ bestCase, mostLikely, worstCase, confidence }) {
+  const figures = [];
+  const prob = s => toScore(s?.probability);
+  const pb = prob(bestCase), pl = prob(mostLikely), pw = prob(worstCase);
+  const conf = toScore(confidence);
 
-export default function ProsConsPanel({ rightReasons, wrongReasons }) {
+  if (conf !== null) {
+    figures.push({
+      label: 'Decision Confidence',
+      value: `${Math.round(conf)}%`,
+      note: 'From your answers and the outcome spread',
+    });
+  }
+  if (pb !== null) {
+    figures.push({ label: 'Upside Probability', value: `${Math.round(pb)}%`, note: 'Best-case scenario likelihood' });
+  }
+  if (pw !== null) {
+    figures.push({ label: 'Downside Risk', value: `${Math.round(pw)}%`, note: 'Worst-case scenario likelihood' });
+  }
+
+  // Probability-weighted expected value across the three scenarios. Needs at
+  // least one priced scenario, and weights are renormalized over exactly the
+  // scenarios that have both a probability and a salary figure.
+  const priced = [[pb, bestCase], [pl, mostLikely], [pw, worstCase]]
+    .map(([p, s]) => ({ p, delta: parseMoney(s?.salaryDelta) }))
+    .filter(x => x.p !== null && x.delta !== null);
+  const weight = priced.reduce((sum, x) => sum + x.p, 0);
+  if (priced.length > 0 && weight > 0) {
+    const ev = priced.reduce((sum, x) => sum + (x.p / weight) * x.delta, 0);
+    figures.push({
+      label: 'Net Expected Value',
+      value: formatUSD(ev),
+      note: `Weighted across ${priced.length} scenario${priced.length === 1 ? '' : 's'}`,
+    });
+  }
+  return figures;
+}
+
+export default function ProsConsPanel({ rightReasons, wrongReasons, bestCase, mostLikely, worstCase, confidence }) {
   const [showFigures, setShowFigures] = useState(false);
+  const figures = buildFigures({ bestCase, mostLikely, worstCase, confidence });
 
   // Listen for PDF export events — expand figures so they appear in the PDF
   useEffect(() => {
@@ -73,20 +109,22 @@ export default function ProsConsPanel({ rightReasons, wrongReasons }) {
         </div>
       </div>
 
-      <button
-        type="button"
-        className="pros-cons-panel__toggle"
-        onClick={() => setShowFigures((v) => !v)}
-        aria-expanded={showFigures}
-      >
-        <BarChart2 size={14} strokeWidth={2} />
-        {showFigures ? 'Hide Facts & Figures' : 'Show Facts & Figures'}
-        <ChevronDown size={14} strokeWidth={2} className={showFigures ? 'is-open' : ''} />
-      </button>
+      {figures.length > 0 && (
+        <button
+          type="button"
+          className="pros-cons-panel__toggle"
+          onClick={() => setShowFigures((v) => !v)}
+          aria-expanded={showFigures}
+        >
+          <BarChart2 size={14} strokeWidth={2} />
+          {showFigures ? 'Hide Facts & Figures' : 'Show Facts & Figures'}
+          <ChevronDown size={14} strokeWidth={2} className={showFigures ? 'is-open' : ''} />
+        </button>
+      )}
 
-      {showFigures && (
+      {showFigures && figures.length > 0 && (
         <div className="pros-cons-panel__figures" aria-label="Facts and figures">
-          {FIGURES.map(f => (
+          {figures.map(f => (
             <div key={f.label} className="pros-cons-figure">
               <p className="pros-cons-figure__label">{f.label}</p>
               <p className="pros-cons-figure__value">{f.value}</p>

@@ -52,6 +52,24 @@ function toHistory(msgs) {
     .map(m => ({ role: m.role, content: m.content }));
 }
 
+/**
+ * Build the payload persisted to `simulation.answers` before a report is
+ * generated. The backend is stateless — it never sees the chat — so this is the
+ * only record of the conversation, and the report is grounded entirely on it.
+ * `transcript` keeps the AI's questions and the user's answers in order (so the
+ * report generator reads the real exchange); `qa` keeps the flat answers-only
+ * map the older rows use, for backward compatibility.
+ */
+function toTranscript(msgs) {
+  const transcript = msgs
+    .filter(m => (m.role === 'user' || m.role === 'assistant') && m.content?.trim())
+    .map(m => ({ role: m.role, content: m.content.trim() }));
+  const qa = {};
+  let n = 0;
+  for (const t of transcript) if (t.role === 'user') qa[`q${n++}`] = t.content;
+  return { transcript, qa };
+}
+
 export default function NewSimulationPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -93,23 +111,30 @@ export default function NewSimulationPage() {
   // ── Handle stranded draft on mount ───────────────────────────
   useEffect(() => {
     async function processStrandedDraft() {
+      let saved;
       try {
-        const saved = localStorage.getItem('fp_sim_draft');
+        saved = localStorage.getItem('fp_sim_draft');
         if (!saved) return;
-        const { simId, msgs } = JSON.parse(saved);
-        if (simId && msgs?.length > 0) {
-          // Convert msgs to answers map for the backend
-          const answers = msgs.filter(m => m.role === 'user').reduce((acc, m, i) => {
-             acc[`q${i}`] = m.content;
-             return acc;
-          }, {});
-          
-          await apiClient.patch(`/simulations/${simId}`, { answers, status: 'IN_PROGRESS' }).catch(() => null);
-        }
       } catch {
-        // corrupted draft — ignore
-      } finally {
+        return;
+      }
+      try {
+        const { simId, msgs } = JSON.parse(saved);
+        if (!simId || !msgs?.length) {
+          localStorage.removeItem('fp_sim_draft');   // nothing recoverable in it
+          return;
+        }
+        // Persist the whole exchange, not just the user's answers, so a
+        // recovered draft grounds its report as well as a live one does.
+        await apiClient.patch(`/simulations/${simId}`, {
+          answers: toTranscript(msgs),
+          status: 'IN_PROGRESS',
+        });
+        // Drop the draft only once the server has it — on failure it stays put
+        // so the next mount can retry instead of losing the conversation.
         localStorage.removeItem('fp_sim_draft');
+      } catch {
+        // corrupted draft or failed PATCH — leave it for the next attempt
       }
     }
     processStrandedDraft();
@@ -383,27 +408,35 @@ export default function NewSimulationPage() {
     if (!simulationId) return;
     setIsGenerating(true);
     try {
-      // 1. Run the decision engine to compute scores
-      await apiClient.post(`/simulations/${simulationId}/analyze`);
+      // 1. Persist the full Q&A transcript FIRST. The backend never saw the
+      //    chat, so without this the report would be generated from nothing but
+      //    the title and category. Everything downstream depends on it, so a
+      //    failure here aborts rather than producing an ungrounded report.
+      await apiClient.patch(`/simulations/${simulationId}`, {
+        answers: toTranscript(messages),
+      });
 
-      // 2. Generate the AI report via the backend
-      try {
-        await apiClient.post(`/reports/generate/${simulationId}`);
-      } catch {
-        // Report generation is best-effort — proceed to results even if it fails
-      }
+      // 2. Generate the AI report from the persisted transcript. This is also
+      //    what scores the simulation and marks it COMPLETED — the old separate
+      //    /analyze call is deliberately gone, because scores now come from the
+      //    report's projection, so calling it first only risked marking the
+      //    simulation complete moments before report generation failed.
+      await apiClient.post(`/reports/generate/${simulationId}`);
 
-      // 3. Navigate to results
+      // 3. Only now is the conversation safely stored server-side, so the local
+      //    draft is no longer the only copy and can be dropped.
       localStorage.removeItem('fp_sim_draft');
       navigate(`/simulations/${simulationId}/results`);
     } catch (err) {
+      // Stay on the page with the draft intact so the user can simply retry —
+      // navigating to an empty or half-built report would be worse.
       setIsGenerating(false);
       setMessages(prev => [
         ...prev,
         {
           id: `err_${Date.now()}`,
           role: 'assistant',
-          content: `⚠️ Could not generate report: ${err.message}. You can still view partial results.`,
+          content: `⚠️ Could not generate your report: ${err.message}. Your conversation is saved — tap "Generate report" to try again.`,
           timestamp: ts(),
         },
       ]);

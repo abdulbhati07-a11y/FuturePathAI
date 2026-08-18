@@ -37,3 +37,43 @@ export function toNumber(value) {
   const n = typeof value === 'number' ? value : Number(value);
   return Number.isFinite(n) ? n : 0;
 }
+
+/**
+ * A score/percentage the backend may legitimately not have: returns the number,
+ * or null when the value is absent. `Number(null)` and `Number('')` are both 0,
+ * so a plain isFinite check would turn a missing score into a confident "0%".
+ */
+export function toScore(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * Parse a money string like "+$18k", "-€12,500" or "$0" into a number.
+ * The sign is significant — a pay cut must stay negative — so unlike a plain
+ * digit-strip this keeps it. Returns null when there is no number to read
+ * (e.g. the backend's "N/A"), which callers render as "—" rather than 0.
+ */
+export function parseMoney(raw) {
+  if (typeof raw === 'number') return Number.isFinite(raw) ? raw : null;
+  if (typeof raw !== 'string') return null;
+  const s = raw.trim().toLowerCase().replace(/−/g, '-');
+  const m = s.match(/(-|\+)?\s*[a-z$€£₹¥]{0,3}\s*(-|\+)?\s*([\d,]+(?:\.\d+)?)\s*(k|m)?/);
+  if (!m) return null;
+  const num = parseFloat((m[3] || '').replace(/,/g, ''));
+  if (!Number.isFinite(num)) return null;
+  const sign = (m[1] === '-' || m[2] === '-') ? -1 : 1;
+  const unit = m[4] === 'k' ? 1e3 : m[4] === 'm' ? 1e6 : 1;
+  return sign * num * unit;
+}
+
+/** Format a number as a signed USD string ("+$18k", "-$1.2M", "$0"). */
+export function formatUSD(n) {
+  if (!Number.isFinite(n)) return '—';
+  const sign = n > 0 ? '+' : n < 0 ? '-' : '';
+  const a = Math.abs(n);
+  if (a >= 1e6) return `${sign}$${(a / 1e6).toFixed(a >= 1e7 ? 0 : 1)}M`;
+  if (a >= 1e3) return `${sign}$${Math.round(a / 1e3)}k`;
+  return `${sign}$${Math.round(a)}`;
+}

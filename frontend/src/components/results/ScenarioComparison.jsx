@@ -1,5 +1,4 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell } from 'recharts';
-import { toText, toNumber } from './reportContent';
+import { toText, toNumber, parseMoney, formatUSD } from './reportContent';
 import './ScenarioComparison.css';
 
 function ScenarioCard({ scenario, isFeatured }) {
@@ -36,23 +35,20 @@ function ScenarioCard({ scenario, isFeatured }) {
   );
 }
 
-function parseSalary(str) {
-  if (!str || typeof str !== 'string') return 0;
-  const multiplier = str.toLowerCase().includes('k') ? 1000 : 1;
-  const num = parseInt(str.replace(/[^0-9-]/g, ''), 10);
-  return isNaN(num) ? 0 : Math.abs(num * multiplier);
-}
-
 const BAR_COLORS = ['var(--color-danger)', 'var(--color-primary)', 'var(--color-success)'];
 
 export default function ScenarioComparison({ bestCase, mostLikely, worstCase }) {
+  // Salary deltas keep their sign: a pay cut is a negative outcome and must not
+  // be shown as a gain. `null` means the report gave no figure for that scenario.
   const chartData = [
-    { name: 'Worst',  salary: parseSalary(worstCase?.salaryDelta),   fill: BAR_COLORS[0] },
-    { name: 'Likely', salary: parseSalary(mostLikely?.salaryDelta),  fill: BAR_COLORS[1] },
-    { name: 'Best',   salary: parseSalary(bestCase?.salaryDelta),    fill: BAR_COLORS[2] },
+    { name: 'Worst',  salary: parseMoney(worstCase?.salaryDelta),   fill: BAR_COLORS[0] },
+    { name: 'Likely', salary: parseMoney(mostLikely?.salaryDelta),  fill: BAR_COLORS[1] },
+    { name: 'Best',   salary: parseMoney(bestCase?.salaryDelta),    fill: BAR_COLORS[2] },
   ];
 
-  const maxVal = Math.max(...chartData.map(d => d.salary), 1);
+  // Bars are scaled by magnitude, so a -$20k cut reads as long as a +$20k rise
+  // while its label still shows the minus sign.
+  const maxVal = Math.max(...chartData.map(d => Math.abs(d.salary ?? 0)), 1);
 
   return (
     <div className="scenario-comparison-wrap">
@@ -72,21 +68,18 @@ export default function ScenarioComparison({ bestCase, mostLikely, worstCase }) 
         {/* Accessible bar chart built with CSS — renders perfectly in PDF */}
         <div className="scenario-chart__bars" aria-label="Scenario salary projections">
           {chartData.map(({ name, salary, fill }) => {
-            const pct = maxVal > 0 ? Math.round((salary / maxVal) * 100) : 0;
+            const pct = salary === null ? 0 : Math.round((Math.abs(salary) / maxVal) * 100);
+            const text = salary === null ? '—' : formatUSD(salary);
             return (
               <div key={name} className="scenario-chart__bar-group">
                 <div className="scenario-chart__bar-label">{name}</div>
-                <div className="scenario-chart__bar-track" aria-label={`${name}: $${salary.toLocaleString()}`}>
+                <div className="scenario-chart__bar-track" aria-label={`${name}: ${text}`}>
                   <div
                     className="scenario-chart__bar-fill"
                     style={{ width: `${pct}%`, background: fill }}
                   />
                 </div>
-                <div className="scenario-chart__bar-value">
-                  ${salary >= 1000
-                    ? `${Math.round(salary / 1000)}k`
-                    : salary.toLocaleString()}
-                </div>
+                <div className="scenario-chart__bar-value">{text}</div>
               </div>
             );
           })}

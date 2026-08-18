@@ -9,32 +9,39 @@ import {
 } from 'recharts';
 import './SimulationComparePage.css';
 
-const SCORE_KEYS = [
-  { key: 'feasibilityScore', label: 'Feasibility' },
-  { key: 'riskScore',        label: 'Risk' },
-  { key: 'impactScore',      label: 'Impact' },
-  { key: 'timelineScore',    label: 'Timeline' },
-  { key: 'confidenceScore',  label: 'Confidence' },
-];
-
-function pickScore(report, key) {
-  return report?.scores?.[key] ?? report?.[key] ?? report?.analysis?.[key] ?? 0;
+// Scores are stored on a 0-100 scale already. Returns null when the value is
+// genuinely absent, so a missing score renders as "—" instead of a real-looking 0.
+// `Number(null)` is 0, hence the explicit absence check before coercing.
+function score(v) {
+  if (v === null || v === undefined || v === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.round(Math.max(0, Math.min(100, n))) : null;
 }
 
-function pct(val) { return Math.round(val * 100); }
+// Only metrics this system actually produces. The three that used to sit here —
+// Feasibility, Impact, Timeline — exist nowhere in the schema, the API or the
+// report, so every comparison showed them as a 0% tie.
+const METRICS = [
+  { key: 'decision',   label: 'Decision',   get: (sim, rep) => score(rep?.scores?.decisionScore   ?? sim?.decisionScore) },
+  { key: 'confidence', label: 'Confidence', get: (sim, rep) => score(rep?.scores?.confidenceScore ?? sim?.confidenceScore) },
+  { key: 'risk',       label: 'Risk',       lowerIsBetter: true, get: (sim, rep) => score(rep?.scores?.riskScore ?? sim?.riskScore) },
+  { key: 'upside',     label: 'Upside',     get: (_sim, rep) => score(rep?.recommendations?.bestCase?.probability) },
+  { key: 'downside',   label: 'Downside',   lowerIsBetter: true, get: (_sim, rep) => score(rep?.recommendations?.worstCase?.probability) },
+];
 
-function MetricRow({ label, a, b }) {
-  const aVal = pct(a);
-  const bVal = pct(b);
-  const winner = aVal > bVal ? 'a' : bVal > aVal ? 'b' : null;
+function MetricRow({ label, a, b, lowerIsBetter }) {
+  // For risk and downside exposure the smaller number is the better outcome.
+  const winner = a === null || b === null || a === b
+    ? null
+    : (lowerIsBetter ? (a < b ? 'a' : 'b') : (a > b ? 'a' : 'b'));
   return (
     <div className="compare__metric-row">
       <span className={`compare__metric-val${winner === 'a' ? ' compare__metric-val--win' : ''}`}>
-        {aVal}%
+        {a === null ? '—' : `${a}%`}
       </span>
       <span className="compare__metric-label">{label}</span>
       <span className={`compare__metric-val${winner === 'b' ? ' compare__metric-val--win' : ''}`}>
-        {bVal}%
+        {b === null ? '—' : `${b}%`}
       </span>
     </div>
   );
@@ -154,11 +161,17 @@ export default function SimulationComparePage() {
 
   const { simA, simB, reportA, reportB } = data;
 
-  const radarData = SCORE_KEYS.map(({ key, label }) => ({
-    metric: label,
-    A: pct(pickScore(reportA, key)),
-    B: pct(pickScore(reportB, key)),
+  const metrics = METRICS.map(m => ({
+    ...m,
+    a: m.get(simA, reportA),
+    b: m.get(simB, reportB),
   }));
+
+  // Charts only plot metrics at least one side actually has, so an unreported
+  // metric is omitted rather than drawn as a zero.
+  const radarData = metrics
+    .filter(m => m.a !== null || m.b !== null)
+    .map(m => ({ metric: m.label, A: m.a ?? 0, B: m.b ?? 0 }));
 
   // Recharts SVG props need real colours at runtime. Series A uses the brand
   // primary, series B the success token — distinguishable in every theme.
@@ -212,11 +225,10 @@ export default function SimulationComparePage() {
             <span>Metric</span>
             <span>{simB?.title || 'B'}</span>
           </div>
-          {SCORE_KEYS.map(({ key, label }) => (
+          {metrics.map(({ key, label, a, b, lowerIsBetter }) => (
             <MetricRow
               key={key} label={label}
-              a={pickScore(reportA, key)}
-              b={pickScore(reportB, key)}
+              a={a} b={b} lowerIsBetter={lowerIsBetter}
             />
           ))}
         </div>

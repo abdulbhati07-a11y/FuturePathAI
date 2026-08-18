@@ -11,8 +11,8 @@ import { getSimulationResult, toggleSimulationPublic } from '../api/results';
 import '../components/Skeleton.css';
 import './ResultsPage.css';
 
-// ScenarioComparison renders a recharts BarChart (~500 kB with the library).
-// Load it lazily so it stays out of the Results page's initial chunk.
+// ScenarioComparison is the largest section of the report and is only needed
+// once the data has loaded, so it stays out of the page's initial chunk.
 const ScenarioComparison = lazy(() => import('../components/results/ScenarioComparison'));
 
 export default function ResultsPage() {
@@ -278,7 +278,8 @@ export default function ResultsPage() {
           <div className="results-page__pdf-header pdf-only">
             <span className="results-page__pdf-brand">FuturePath AI</span>
             <span className="results-page__pdf-meta">
-              {result.title} · Generated {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+              {result.title}
+              {result.finalizedDate ? ` · Finalized ${result.finalizedDate}` : ' · Draft — not finalized'}
             </span>
           </div>
 
@@ -286,8 +287,9 @@ export default function ResultsPage() {
             title={result.title}
             date={result.finalizedDate}
             overallRisk={result.overallRisk}
-            riskLabel={result.riskLabel}
+            riskScore={result.riskScore}
             confidence={result.confidence}
+            verdict={result.verdict}
             onRerun={() => navigate('/app/simulations/new')}
           />
 
@@ -302,6 +304,10 @@ export default function ResultsPage() {
           <ProsConsPanel
             rightReasons={result.rightReasons}
             wrongReasons={result.wrongReasons}
+            bestCase={result.bestCase}
+            mostLikely={result.mostLikely}
+            worstCase={result.worstCase}
+            confidence={result.confidence}
           />
 
           <PathTimeline milestones={result.timeline} />

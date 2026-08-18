@@ -109,6 +109,18 @@
   color: var(--color-success);
 }
 
+.results-score-card__value--caution {
+  color: var(--color-warning);
+}
+
+.results-score-card__value--warn {
+  color: var(--color-danger);
+}
+
+.results-score-card__value--pending {
+  color: var(--text-tertiary);
+}
+
 .results-header__rerun:focus-visible {
   outline: 2px solid transparent;
   outline-offset: 2px;
