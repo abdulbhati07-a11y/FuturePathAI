@@ -6,8 +6,13 @@
 
 .chat-composer__suggestions {
   display: flex;
-  flex-wrap: wrap;
   gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+.chat-composer__suggestions::-webkit-scrollbar {
+  display: none;
 }
 
 .chat-composer__chip {
@@ -21,6 +26,8 @@
   cursor: pointer;
   transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
   font-family: inherit;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .chat-composer__chip:hover:not(:disabled) {

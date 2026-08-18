@@ -79,7 +79,7 @@ async function aiChat(messages: any[], stream = false): Promise<Response> {
   // engages when GEMINI_API_KEY is set AND Groq is rate-limited/errors/unreachable.
   const hasGemini    = !!process.env.GEMINI_API_KEY;
   const GROQ_MODEL   = process.env.GROQ_MODEL   || 'llama-3.1-8b-instant';
-  const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-flash-latest';
+  const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
 
   const call = (url: string, key: string, model: string) => fetch(url, {
     method: 'POST',
