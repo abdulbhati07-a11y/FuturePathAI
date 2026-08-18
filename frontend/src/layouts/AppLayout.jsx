@@ -27,7 +27,7 @@ const NAV_ID_TO_PATH = {
   'settings':       '/app/settings',
   'admin':          '/app/admin',
   'landing':        '/',
-  'sample-report':  '/simulations/sim_1/results',
+  'sample-report':  '/app/reports',
 };
 
 const PATH_TO_TITLE = {

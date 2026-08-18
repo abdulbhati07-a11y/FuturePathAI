@@ -4,15 +4,6 @@ import { Search, Globe, User, Shield, ChevronRight, RefreshCw, AlertCircle, File
 import { apiClient } from '../api/client';
 import './GalleryPage.css';
 
-const MOCK_GALLERY = [
-  { id: 'sim_1', title: 'Should I take the senior role in Berlin?', category: 'Career', authorName: 'Sarah C.', riskLevel: 'Low', updatedAt: '2024-10-24' },
-  { id: 'sim_2', title: 'Series C Equity Liquidation Strategy',    category: 'Investment', authorName: 'James R.', riskLevel: 'Medium', updatedAt: '2024-10-12' },
-  { id: 'sim_3', title: 'Should I move to Barcelona for lifestyle?', category: 'Relocation', authorName: 'Maria L.', riskLevel: 'Low', updatedAt: '2024-10-08' },
-  { id: 'sim_4', title: 'Launching a SaaS bootstrapped vs funded', category: 'Business', authorName: 'Alex T.', riskLevel: 'High', updatedAt: '2024-09-30' },
-  { id: 'sim_5', title: 'MBA vs on-the-job promotion — ROI',       category: 'Education', authorName: 'Priya K.', riskLevel: 'Low', updatedAt: '2024-09-22' },
-  { id: 'sim_6', title: 'Early retirement at 45 — can I afford it?', category: 'Finance', authorName: 'Tom W.', riskLevel: 'Medium', updatedAt: '2024-09-15' },
-];
-
 const RISK_CLS = { Low: 'risk--low', Medium: 'risk--med', High: 'risk--high' };
 
 export default function GalleryPage() {
@@ -28,9 +19,10 @@ export default function GalleryPage() {
     try {
       const raw = await apiClient.get('/simulations/public');
       const list = Array.isArray(raw) ? raw : (raw?.data ?? []);
-      setSimulations(list.length ? list : MOCK_GALLERY);
+      setSimulations(list);
     } catch {
-      setSimulations(MOCK_GALLERY);
+      setSimulations([]);
+      setError('Could not load the community gallery. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -101,10 +93,12 @@ export default function GalleryPage() {
       ) : filtered.length === 0 ? (
         <div className="gallery-page__empty">
           <FileText size={44} strokeWidth={1.3} />
-          <p>No simulations match your search.</p>
-          <button type="button" className="gallery-page__clear-btn" onClick={() => setSearch('')}>
-            Clear search
-          </button>
+          <p>{search.trim() ? 'No simulations match your search.' : 'No public simulations have been shared yet.'}</p>
+          {search.trim() && (
+            <button type="button" className="gallery-page__clear-btn" onClick={() => setSearch('')}>
+              Clear search
+            </button>
+          )}
         </div>
       ) : (
         <div className="gallery-grid">

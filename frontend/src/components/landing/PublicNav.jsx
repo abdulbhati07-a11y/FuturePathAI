@@ -50,8 +50,8 @@ export default function PublicNav() {
         </button>
         <button
           type="button"
-          className={isActive('/simulations/sim_1/results') ? 'is-active' : ''}
-          onClick={() => { navigate('/simulations/sim_1/results'); setMenuOpen(false); }}
+          className={isActive('/app/reports') ? 'is-active' : ''}
+          onClick={() => { navigate('/app/reports'); setMenuOpen(false); }}
         >
           Report
         </button>
@@ -104,7 +104,7 @@ export default function PublicNav() {
             <button type="button" onClick={() => { navigate('/app/dashboard'); setMenuOpen(false); }}>
               Dashboard
             </button>
-            <button type="button" onClick={() => { navigate('/simulations/sim_1/results'); setMenuOpen(false); }}>
+            <button type="button" onClick={() => { navigate('/app/reports'); setMenuOpen(false); }}>
               Report
             </button>
 

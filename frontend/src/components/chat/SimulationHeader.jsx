@@ -5,12 +5,12 @@ import './SimulationHeader.css';
 const PAGE_LINKS = [
   { label: 'Landing', icon: Home, path: '/' },
   { label: 'Dashboard', icon: LayoutGrid, path: '/app/dashboard' },
-  { label: 'Report', icon: FileText, path: '/simulations/sim_1/results' },
+  { label: 'Report', icon: FileText, path: '/app/reports' },
 ];
 
 export default function SimulationHeader({ currentStep, totalSteps, avatarUrl, onClose }) {
   const navigate = useNavigate();
-  const progress = Math.round((currentStep / totalSteps) * 100);
+  const progress = totalSteps > 0 ? Math.round((currentStep / totalSteps) * 100) : 0;
 
   return (
     <header className="simulation-header">

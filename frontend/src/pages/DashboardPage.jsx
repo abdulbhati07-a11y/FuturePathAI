@@ -82,7 +82,7 @@ export default function DashboardPage() {
 
     loadDashboard();
 
-    // Subscribe to real-time updates
+    // Subscribe to real-time updates, then start the 2s ticker that pushes them.
     const unsubscribe = realTimeSimulation.subscribe((data) => {
       if (!isMounted) return;
       setStats(data.stats);
@@ -90,6 +90,7 @@ export default function DashboardPage() {
       setCorrelations(data.correlations);
       setMeta(data.meta);
     });
+    realTimeSimulation.start();
 
     return () => { 
       isMounted = false; 

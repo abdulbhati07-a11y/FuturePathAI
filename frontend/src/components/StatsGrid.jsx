@@ -141,7 +141,11 @@ function TrendIcon({ trend }) {
 export default function StatsGrid({ stats, exclude = [] }) {
   if (!stats) return null;
 
-  const { stabilityIndex, riskVector, projectedCapital, pathAlpha } = stats;
+  // Default each metric to an empty object so a partial payload can't throw on
+  // property access; cards whose data is missing are filtered out of the render below.
+  const {
+    stabilityIndex = {}, riskVector = {}, projectedCapital = {}, pathAlpha = {},
+  } = stats;
 
   // Resolve theme colours at render time so charts match the active theme
   const primary = cssVar('--color-primary');
@@ -215,7 +219,7 @@ export default function StatsGrid({ stats, exclude = [] }) {
     },
   ];
 
-  const visible = cards.filter(c => !exclude.includes(c.key));
+  const visible = cards.filter(c => !exclude.includes(c.key) && stats[c.key]);
 
   return (
     <div className="stats-grid" data-count={visible.length}>

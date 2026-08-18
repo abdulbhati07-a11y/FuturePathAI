@@ -25,9 +25,18 @@ function db() {
 }
 
 // ── Auth helpers ──────────────────────────────────────────────────────────────
-const SECRET = process.env.JWT_SECRET || 'super-secret-key';
-function sign(payload: object) { return jwt.sign(payload, SECRET, { expiresIn: '15m' }); }
-function verify(token: string): any { try { return jwt.verify(token, SECRET); } catch { return null; } }
+// No guessable fallback: if JWT_SECRET is unset the API fails closed (no tokens
+// can be minted or verified) rather than signing with a well-known default.
+const SECRET = process.env.JWT_SECRET;
+if (!SECRET) console.error('FATAL: JWT_SECRET is not set — authentication is disabled until it is configured.');
+function sign(payload: object) {
+  if (!SECRET) throw new Error('JWT_SECRET is not configured');
+  return jwt.sign(payload, SECRET, { expiresIn: '15m' });
+}
+function verify(token: string): any {
+  if (!SECRET) return null;
+  try { return jwt.verify(token, SECRET); } catch { return null; }
+}
 function getUser(req: VercelRequest) {
   const h = req.headers.authorization;
   if (!h?.startsWith('Bearer ')) return null;
@@ -78,8 +87,8 @@ async function aiChat(messages: any[], stream = false): Promise<Response> {
   // (streaming + non-streaming), so no call site needs to change. Gemini only
   // engages when GEMINI_API_KEY is set AND Groq is rate-limited/errors/unreachable.
   const hasGemini    = !!process.env.GEMINI_API_KEY;
-  const GROQ_MODEL   = process.env.GROQ_MODEL   || 'llama-3.1-8b-instant';
-  const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+  const GROQ_MODEL   = process.env.GROQ_MODEL   || 'openai/gpt-oss-120b';
+  const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-flash-latest';
 
   const call = (url: string, key: string, model: string) => fetch(url, {
     method: 'POST',
@@ -419,6 +428,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const simId = path.split('/')[3];
       const report = await prisma.report.findUnique({ where: { simulationId: simId } });
       if (!report) return err(res, 'Report not found', 404);
+      // Ownership check: only the report's owner may read it, unless the underlying
+      // simulation is shared publicly. Without this any authenticated user could
+      // read anyone's report by guessing/knowing a simulation id (IDOR).
+      if (report.userId !== u.sub) {
+        const sim = await prisma.simulation.findUnique({ where: { id: simId }, select: { isPublic: true } });
+        if (!sim?.isPublic) return err(res, 'Forbidden', 403);
+      }
       return ok(res, { id:report.id, simulationId:report.simulationId, summary:report.summary, timeline: typeof report.timeline==='string'?JSON.parse(report.timeline):report.timeline, recommendations: typeof report.recommendations==='string'?JSON.parse(report.recommendations):report.recommendations, scores: typeof report.scores==='string'?JSON.parse(report.scores):report.scores, createdAt:report.createdAt, updatedAt:report.updatedAt });
     }
 
@@ -426,7 +442,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return err(res, `Route not found: ${req.method} ${path}`, 404);
 
   } catch (e: any) {
+    // Log the real error server-side; never leak internal messages/stack to clients.
     console.error('API error:', e);
-    return err(res, e.message || 'Internal server error', 500);
+    return err(res, 'Internal server error', 500);
   }
 }

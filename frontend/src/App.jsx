@@ -129,7 +129,7 @@ function AppRoutes() {
         <Route path="/legal/:page" element={<LegalPage />} />
 
         {/* Simulation results — public (shareable link) */}
-        <Route path="/simulations/:simulationId/results" element={<ResultsPage />} />
+        <Route path="/simulations/:simulationId/results" element={<ErrorBoundary><ResultsPage /></ErrorBoundary>} />
 
         {/* ── App shell (sidebar + navbar) ──────────────── */}
         <Route
