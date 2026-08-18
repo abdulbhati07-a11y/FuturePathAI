@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Sparkles, User } from 'lucide-react';
 import {
   extractOptions,
@@ -15,7 +16,7 @@ import './ChatMessage.css';
  * @param {boolean}  props.showOptions   - render lettered options as tappable chips
  * @param {(text: string) => void} [props.onOptionClick]
  */
-export default function ChatMessage({
+function ChatMessage({
   role,
   content,
   timestamp,
@@ -73,3 +74,9 @@ export default function ChatMessage({
     </div>
   );
 }
+
+// Memoized: during token-by-token streaming the parent re-renders on every
+// token, but only the streaming bubble's `content`/`isStreaming` actually
+// change. With a stable `onOptionClick` (see NewSimulationPage), memo lets the
+// other bubbles bail out of re-rendering instead of re-rendering the whole list.
+export default memo(ChatMessage);

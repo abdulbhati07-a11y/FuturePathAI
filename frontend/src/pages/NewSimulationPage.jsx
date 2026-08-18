@@ -8,6 +8,8 @@ import LiveInsightPanel from '../components/chat/LiveInsightPanel';
 import { extractOptions } from '../components/chat/messageFormat';
 import { ThinkingIndicator, SavePauseBar } from '../components/chat/ChatFooter';
 import { createSimulation, streamChatReply, saveDraftAndPause } from '../api/chat';
+import { ChevronDown } from 'lucide-react';
+import { useStickyScroll } from '../hooks/useStickyScroll';
 import './NewSimulationPage.css';
 
 const TOTAL_STEPS = 6;
@@ -71,10 +73,15 @@ export default function NewSimulationPage() {
   const [initError, setInitError]           = useState('');
   const [resumeCtx, setResumeCtx]           = useState(null);
 
-  const scrollRef    = useRef(null);
-  const atBottomRef  = useRef(true);
   const abortRef     = useRef(false);
   const composerRef  = useRef(null);
+  const handleSendRef = useRef(null);   // latest handleSend, for the memo-stable option handler
+
+  // Sticky-bottom scrolling for the streaming chat (see hooks/useStickyScroll).
+  // Passing `messages` as the dep follows both new messages and the per-token
+  // growth of the streaming reply (each token yields a new array reference).
+  const { scrollRef, showJumpButton, scrollToBottom, handleScroll, pin } =
+    useStickyScroll(messages);
 
   // In React 18 Strict Mode, components mount -> unmount -> remount.
   // We must reset the ref on mount so the chat isn't permanently aborted.
@@ -123,19 +130,6 @@ export default function NewSimulationPage() {
     }
   }, [simulationId, messages, currentStep, isStreaming]);
 
-  // ── Auto-scroll ────────────────────────────────────────────────────────────
-  function handleScroll() {
-    if (!scrollRef.current) return;
-    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-    atBottomRef.current = scrollHeight - scrollTop - clientHeight < 100;
-  }
-
-  useEffect(() => {
-    if (atBottomRef.current && scrollRef.current) {
-      scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-    }
-  }, [messages]);
-
   // ── Open the session ──────────────────────────────────────────────────────
   // Normal open shows a fixed greeting (no AI call). A prompt-chip open starts
   // the AI turn immediately; a saved draft is restored by the effect above.
@@ -156,7 +150,7 @@ export default function NewSimulationPage() {
           };
           setMessages([userMsg]);
           setCurrentStep(1);
-          atBottomRef.current = true;
+          pin();
 
           // Detect topic → create sim → stream response
           const { title, category } = await apiClient
@@ -307,7 +301,7 @@ export default function NewSimulationPage() {
   async function handleSend(text) {
     if (!text?.trim() || isThinking || isStreaming) return;
 
-    atBottomRef.current = true;
+    pin();
 
     // Add user message to UI immediately
     const userMsg = { id: `u_${Date.now()}`, role: 'user', content: text.trim(), timestamp: ts() };
@@ -340,17 +334,26 @@ export default function NewSimulationPage() {
     }
   }
 
+  // Keep a ref to the latest handleSend so the memo-stable handleOptionClick
+  // below always calls the current closure. handleSend is recreated every
+  // render (it closes over `messages`), so we can't depend on it directly
+  // without recreating handleOptionClick — which would defeat React.memo on
+  // <ChatMessage> and re-render every bubble on every streamed token.
+  useEffect(() => { handleSendRef.current = handleSend; });
+
   // ── Option chip clicked ────────────────────────────────────────────────────
   // Most chips send their text as the user's answer. The "something else"
   // chip is different: it just focuses the composer so the user can type a
   // decision that isn't in the common list.
-  function handleOptionClick(text) {
+  // Empty deps → stable identity across renders (composerRef / handleSendRef are
+  // refs, SOMETHING_ELSE is a module constant), so memoized bubbles stay put.
+  const handleOptionClick = useCallback((text) => {
     if (text === SOMETHING_ELSE) {
       composerRef.current?.focus();
       return;
     }
-    handleSend(text);
-  }
+    handleSendRef.current?.(text);
+  }, []);
 
   // ── Resume an interrupted turn ─────────────────────────────────────────────
   function handleResume() {
@@ -451,37 +454,51 @@ export default function NewSimulationPage() {
             </span>
           </div>
 
-          <div
-            className="new-sim-page__messages"
-            ref={scrollRef}
-            onScroll={handleScroll}
-          >
-            {initError && (
-              <div className="new-sim-page__error">
-                ⚠️ {initError}
-                <button type="button" onClick={() => window.location.reload()} style={{ marginLeft: 12, textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer', color: 'inherit' }}>
-                  Retry
-                </button>
-              </div>
-            )}
+          <div className="new-sim-page__messages-wrap">
+            <div
+              className="new-sim-page__messages"
+              ref={scrollRef}
+              onScroll={handleScroll}
+            >
+              {initError && (
+                <div className="new-sim-page__error">
+                  ⚠️ {initError}
+                  <button type="button" onClick={() => window.location.reload()} style={{ marginLeft: 12, textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer', color: 'inherit' }}>
+                    Retry
+                  </button>
+                </div>
+              )}
 
-            {messages.map((m, idx) => (
-              <ChatMessage
-                key={m.id}
-                role={m.role}
-                content={m.content}
-                timestamp={m.timestamp}
-                isStreaming={
-                  isStreaming &&
-                  m.role === 'assistant' &&
-                  idx === messages.length - 1
-                }
-                showOptions={
-                  m.role === 'assistant' && idx === messages.length - 1 && !busy
-                }
-                onOptionClick={handleOptionClick}
-              />
-            ))}
+              {messages.map((m, idx) => (
+                <ChatMessage
+                  key={m.id}
+                  role={m.role}
+                  content={m.content}
+                  timestamp={m.timestamp}
+                  isStreaming={
+                    isStreaming &&
+                    m.role === 'assistant' &&
+                    idx === messages.length - 1
+                  }
+                  showOptions={
+                    m.role === 'assistant' && idx === messages.length - 1 && !busy
+                  }
+                  onOptionClick={handleOptionClick}
+                />
+              ))}
+            </div>
+
+            {showJumpButton && (
+              <button
+                type="button"
+                className="new-sim-page__jump-btn"
+                onClick={() => scrollToBottom()}
+                aria-label="Scroll to latest message"
+              >
+                <ChevronDown size={16} strokeWidth={2.5} aria-hidden="true" />
+                Scroll to bottom
+              </button>
+            )}
           </div>
 
           {/* ── Footer ──────────────────────────────────────────────────── */}
