@@ -203,12 +203,21 @@ function fmtUSD(n: number): string {
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 const str = (v: any, fallback = '') => (typeof v === 'string' && v.trim() ? v.trim() : fallback);
 
+// A 0-100 figure, or null when the model gave us nothing. `Number(null)` is 0 and
+// `Number(undefined) || 0` is 0, so absent values have to be rejected *before* the
+// finite check or they arrive downstream as a confident-looking zero.
+const pct = (v: any): number | null =>
+  (v === null || v === undefined || v === '' || !Number.isFinite(Number(v))
+    ? null
+    : clamp(Math.round(Number(v)), 0, 100));
+
 function validateScenario(s: any, label: string, fallbackTitle: string) {
   const money = parseMoney(s?.salaryDelta);
   const satNum = parseMoney(String(s?.satisfaction ?? '').split('/')[0]);
   return {
     label,
-    probability: clamp(Math.round(Number(s?.probability) || 0), 0, 100),
+    // Absence stays absent: an unforecast scenario renders "—", not "0% PROB.".
+    probability: pct(s?.probability),
     title: str(s?.title, fallbackTitle),
     description: str(s?.description, 'No description provided.'),
     // Sign is meaningful (a pay cut must stay negative) and is preserved here.
@@ -231,14 +240,21 @@ function validateReport(raw: any) {
     const t = best; best = { ...worst, label: 'BEST CASE' }; worst = { ...t, label: 'WORST CASE' };
   }
 
-  // The three scenarios are exhaustive, so their probabilities must sum to 100.
-  const total = best.probability + likely.probability + worst.probability;
-  if (total > 0 && Math.abs(total - 100) > 1) {
-    best.probability   = Math.round((best.probability   / total) * 100);
-    worst.probability  = Math.round((worst.probability  / total) * 100);
-    likely.probability = clamp(100 - best.probability - worst.probability, 0, 100);
-  } else if (total === 0) {
-    best.probability = 20; likely.probability = 60; worst.probability = 20;
+  // The three scenarios are exhaustive, so their probabilities must sum to 100 —
+  // but that premise only holds when the model actually forecast all three. With
+  // one missing there is no distribution to renormalize against, and inventing a
+  // default spread would persist a projection this user never received. So a
+  // partial forecast is left exactly as it came in, and the UI shows "—" for the
+  // scenario that has no figure.
+  if (best.probability !== null && likely.probability !== null && worst.probability !== null) {
+    const total = best.probability + likely.probability + worst.probability;
+    if (total > 0 && Math.abs(total - 100) > 1) {
+      best.probability   = Math.round((best.probability   / total) * 100);
+      worst.probability  = Math.round((worst.probability  / total) * 100);
+      likely.probability = clamp(100 - best.probability - worst.probability, 0, 100);
+    }
+    // total === 0 is left alone: three explicit zeros are a degenerate forecast,
+    // and calcScores already declines to score it rather than guessing.
   }
 
   const reasons = (v: any, pad: string) => {
@@ -258,7 +274,9 @@ function validateReport(raw: any) {
     })),
     alternatives: (Array.isArray(d.alternatives) ? d.alternatives : []).slice(0, 6).map((a: any, i: number) => ({
       id: str(a?.id, `alt${i + 1}`), title: str(a?.title, `Alternative ${i + 1}`),
-      subtitle: str(a?.subtitle, ''), score: clamp(Math.round(Number(a?.score) || 0), 0, 100),
+      // An unrated alternative is not a zero-rated one — 0 would paint it red as
+      // though the model had actively judged it worthless.
+      subtitle: str(a?.subtitle, ''), score: pct(a?.score),
     })),
   };
 }
@@ -278,9 +296,11 @@ function calcScores(answers: any, report?: any): { riskScore: number | null; con
   // How much evidence we actually hold: breadth of answers plus their depth.
   const evidence = 0.6 * Math.min(1, answered / 5) + 0.4 * Math.min(1, words / 120);
 
-  // Number(null) is 0, so absent values must be rejected before the finite check.
-  const p = (v: any) => (v === null || v === undefined || v === '' || !Number.isFinite(Number(v)) ? null : clamp(Number(v), 0, 100));
-  const pb = p(report?.bestCase?.probability), pl = p(report?.mostLikely?.probability), pw = p(report?.worstCase?.probability);
+  // Absent probabilities are rejected by `pct`, not coerced. This guard is no
+  // longer dead code on the report path: validateReport now preserves a missing
+  // probability as null instead of inventing a 20/60/20 spread, so a partial
+  // forecast reaches here and correctly declines to produce any score at all.
+  const pb = pct(report?.bestCase?.probability), pl = pct(report?.mostLikely?.probability), pw = pct(report?.worstCase?.probability);
   if (pb === null || pl === null || pw === null || pb + pl + pw <= 0) {
     return { riskScore: null, confidenceScore: null, decisionScore: null };
   }
@@ -535,12 +555,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const report = await prisma.report.findUnique({ where: { simulationId: id } });
       const recs: any = report ? (typeof report.recommendations === 'string' ? JSON.parse(report.recommendations) : report.recommendations) : {};
       const tl: any = report ? (typeof report.timeline === 'string' ? JSON.parse(report.timeline) : report.timeline) : [];
+      let stored: any = {};
+      if (report) { try { stored = typeof report.scores === 'string' ? JSON.parse(report.scores) : (report.scores ?? {}); } catch { stored = {}; } }
 
       // Every field below is either stored data or derived from it. Nothing is
       // invented: no report means no verdict, no confidence and no date, so the
       // UI can render an honest empty state instead of a confident-looking one.
-      const risk = sim.riskScore ?? null;
-      const dec  = sim.decisionScore ?? null;
+      //
+      // The report holds the scores it computed; the columns on the simulation are
+      // a denormalized copy kept so lists can sort and filter without a join. When
+      // the copy is missing the report still knows the answer, so fall back to it
+      // rather than reporting "Not assessed" over a report that plainly has
+      // figures. Without this the compare page (which already reads the report
+      // first) and this page disagree about the very same simulation.
+      const risk = sim.riskScore ?? pct(stored?.riskScore);
+      const dec  = sim.decisionScore ?? pct(stored?.decisionScore);
+      const conf = sim.confidenceScore ?? pct(stored?.confidenceScore);
       const verdict = dec === null ? null
         : dec >= 75 ? 'RECOMMENDED'
         : dec >= 60 ? 'PROCEED WITH CARE'
@@ -557,7 +587,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         overallRisk: risk === null ? null : risk < 30 ? 'Low' : risk < 70 ? 'Moderate' : 'High',
         riskLabel: risk === null ? 'Not assessed' : `Risk score ${risk}/100`,
         riskScore: risk, decisionScore: dec, verdict,
-        confidence: sim.confidenceScore ?? null,
+        confidence: conf,
         bestCase: recs.bestCase, mostLikely: recs.mostLikely, worstCase: recs.worstCase,
         rightReasons: recs.rightReasons ?? [], wrongReasons: recs.wrongReasons ?? [],
         timeline: tl, alternatives: recs.alternatives ?? [],
@@ -688,8 +718,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           prisma.report.count(),
           // SQL AVG skips NULLs, which is exactly the intent: average the
           // simulations that were actually scored rather than counting every
-          // unscored draft as a zero and dragging the mean toward 0.
-          prisma.simulation.aggregate({ _avg: { riskScore: true } }),
+          // unscored draft as a zero and dragging the mean toward 0. _count on
+          // the same column returns that denominator, so the card can say how
+          // many runs the average actually describes instead of implying all of
+          // them — a mean over 4 of 39 rows is not a platform-wide figure.
+          prisma.simulation.aggregate({ _avg: { riskScore: true }, _count: { riskScore: true } }),
           prisma.simulation.groupBy({ by: ['category'], _count: { _all: true } }),
           prisma.simulation.findMany({ where: { createdAt: { gte: since } }, select: { createdAt: true } }),
           // `roles` is a Json column that some rows hold as a JSON *string*
@@ -704,6 +737,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         premiumUsers: countRole(roleRows, 'PREMIUM'),
         // null, not 0, when nothing has been scored yet.
         averageRisk: avgRisk === null || avgRisk === undefined ? null : Math.round(Number(avgRisk)),
+        // The AVG denominator, so the dashboard can qualify the figure.
+        scoredSimulations: riskAgg._count?.riskScore ?? 0,
         simulationsByDay: bucketByDay(recent.map((s: any) => s.createdAt), since, WINDOW_DAYS),
         simulationsByCategory: byCategory
           .map((c: any) => ({ category: c.category, count: c._count?._all ?? c._count ?? 0 }))
@@ -783,7 +818,12 @@ Return ONLY raw JSON with EXACTLY these keys and shapes: bestCase/mostLikely/wor
       aiData = validateReport(aiData);
       const scores = calcScores(sim.answers, aiData);
       await prisma.report.upsert({ where:{simulationId:simId}, create:{id:uuid(),simulationId:simId,userId:u.sub,summary:aiData.mostLikely?.description||'Report',chartData:'[]',timeline:JSON.stringify(aiData.timeline||[]),scores:JSON.stringify(scores),recommendations:JSON.stringify(aiData)}, update:{summary:aiData.mostLikely?.description||'Report',timeline:JSON.stringify(aiData.timeline||[]),scores:JSON.stringify(scores),recommendations:JSON.stringify(aiData)} });
-      await prisma.simulation.update({ where:{id:simId}, data:{status:'COMPLETED',...scores} });
+      // Same rule as /analyze: nulls mean "not scoreable", not "score of zero",
+      // so they must never be written over columns that already hold real
+      // figures. Reachable now that a partial forecast yields null scores.
+      const simData: any = { status: 'COMPLETED' };
+      if (scores.decisionScore !== null) Object.assign(simData, scores);
+      await prisma.simulation.update({ where:{id:simId}, data: simData });
       return ok(res, { generated: true, simulationId: simId });
     }
 

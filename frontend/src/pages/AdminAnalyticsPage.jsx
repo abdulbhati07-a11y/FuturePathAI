@@ -106,10 +106,16 @@ export default function AdminAnalyticsPage() {
             : null}
         />
         <StatCard label="Reports Generated" value={stats.totalReports} accent="var(--color-warning)" />
-        {/* Null when nothing has been scored — an unscored platform is not a 0% risk one. */}
+        {/* Null when nothing has been scored — an unscored platform is not a 0% risk one.
+            When it is scored, the sub-label carries the denominator: a mean over 4 of
+            39 runs reads as a platform-wide figure unless it says otherwise. */}
         <StatCard label="Average Risk" value={stats.averageRisk == null ? null : `${stats.averageRisk}%`}
           accent="var(--color-warning)"
-          sub={stats.averageRisk == null ? 'No scored simulations yet' : null}
+          sub={stats.averageRisk == null
+            ? 'No scored simulations yet'
+            : stats.scoredSimulations != null && stats.totalSimulations
+              ? `across ${stats.scoredSimulations} of ${stats.totalSimulations} runs`
+              : null}
         />
         {/* The conversion sub-label needs both figures — premiumUsers used to be
             absent entirely, which rendered a literal "NaN% conversion". */}
