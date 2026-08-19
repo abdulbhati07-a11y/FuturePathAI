@@ -12,7 +12,7 @@
 import { useNavigate } from 'react-router-dom';
 import {
   MessagesSquare, GitBranch, FileText,
-  ShieldCheck, Scale, EyeOff, ArrowRight, Mail,
+  ShieldCheck, Scale, EyeOff, ArrowRight,
 } from 'lucide-react';
 import PublicNav from '../components/landing/PublicNav';
 import SiteFooter from '../components/SiteFooter';
@@ -151,16 +151,13 @@ export default function AboutPage() {
                 shows you a dash instead of a zero, tells you how much evidence a score
                 is standing on, and would rather look uncertain than be quietly wrong.
               </p>
-              <div className="about-page__founder-links">
-                {/* Points at the real inquiry form on the landing page. No mailto and
-                    no placeholder social profile: futurepathai.org mail is not set up
-                    yet, and a link that silently goes nowhere is the same defect as a
-                    fabricated number. */}
-                <a className="about-page__founder-link" href="/#about">
-                  <Mail size={14} strokeWidth={2} />
-                  Get in touch
-                </a>
-              </div>
+              {/* There was a "Get in touch" link here, pointing at the inquiry form
+                  on the landing page. I wrote it believing that form worked. It did
+                  not — it discarded the message and replied "we'll be in touch
+                  shortly" to everyone. The form is now honest about having no inbox,
+                  which leaves this link with nothing to promise, so it is gone. The
+                  CTA below is a real next step; a contact link goes back in when
+                  there is an address behind it. */}
             </div>
           </article>
         </section>

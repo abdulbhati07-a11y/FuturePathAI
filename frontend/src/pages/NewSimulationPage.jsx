@@ -118,8 +118,17 @@ export default function NewSimulationPage() {
       } catch {
         return;
       }
+      let simId, msgs;
       try {
-        const { simId, msgs } = JSON.parse(saved);
+        ({ simId, msgs } = JSON.parse(saved));
+      } catch {
+        // Unparseable, so no future attempt can do better with it. The old code
+        // left it in place "for the next attempt" and re-threw on every mount,
+        // keeping a dead key forever.
+        localStorage.removeItem('fp_sim_draft');
+        return;
+      }
+      try {
         if (!simId || !msgs?.length) {
           localStorage.removeItem('fp_sim_draft');   // nothing recoverable in it
           return;
@@ -134,7 +143,7 @@ export default function NewSimulationPage() {
         // so the next mount can retry instead of losing the conversation.
         localStorage.removeItem('fp_sim_draft');
       } catch {
-        // corrupted draft or failed PATCH — leave it for the next attempt
+        // failed PATCH — leave it for the next attempt
       }
     }
     processStrandedDraft();

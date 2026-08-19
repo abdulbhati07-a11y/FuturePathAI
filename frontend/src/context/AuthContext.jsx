@@ -18,18 +18,38 @@ export function AuthProvider({ children }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function fetchMe(tk) {
+  function clearSession() {
+    localStorage.removeItem('accessToken');
+    setToken(null);
+    setUser(null);
+  }
+
+  async function fetchMe(tk, { retry = true } = {}) {
     try {
       const res = await fetch(`${BASE_URL}/users/me`, {
         headers: { Authorization: `Bearer ${tk}` },
       });
-      if (!res.ok) throw new Error('Unauthorized');
+      // Only the server saying "this token is no good" is grounds for signing
+      // someone out. This used to clear the session on ANY failure, so a user
+      // whose phone dropped to no bars for the one second the app booted, or who
+      // reloaded during a 500, was silently logged out with a perfectly valid
+      // token — and had to find their password again to get back to work.
+      if (res.status === 401 || res.status === 403) {
+        clearSession();
+        return;
+      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const body = await res.json();
       setUser(body.data ?? body);
     } catch {
-      localStorage.removeItem('accessToken');
-      setToken(null);
-      setUser(null);
+      // Network error, 5xx, or unparseable body: the token is probably fine, so
+      // keep it. One retry covers the common transient case; if that fails too
+      // we leave the session intact and let the next real API call decide — a
+      // genuinely bad token will fire auth:unauthorized and clear it properly.
+      if (retry) {
+        await new Promise(r => setTimeout(r, 1200));
+        return fetchMe(tk, { retry: false });
+      }
     } finally {
       setLoading(false);
     }

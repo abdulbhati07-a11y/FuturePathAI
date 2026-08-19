@@ -60,25 +60,35 @@ export default function SimulationComparePage() {
   // Picker state — used when we have `a` but no `b` yet.
   const [pickList, setPickList] = useState([]);
   const [pickLoading, setPickLoading] = useState(false);
+  // A failed fetch and an account with one simulation both produced an empty
+  // pickList, and the empty state says "You need at least two simulations to
+  // compare." So a dropped request told a user with a dozen simulations they had
+  // one. Tracking the failure separately keeps those two facts apart.
+  const [pickError, setPickError] = useState('');
+  const [pickReload, setPickReload] = useState(0);
 
   // ── Load the candidate list for the "pick B" step ──────────────────────────
   useEffect(() => {
     if (!idA || idB) return; // only when exactly one id is present
     let mounted = true;
     setPickLoading(true);
+    setPickError('');
     (async () => {
       try {
         const raw = await apiClient.get('/simulations?limit=50');
         const list = Array.isArray(raw) ? raw : (raw?.data ?? []);
         if (mounted) setPickList(list.filter(s => String(s.id) !== String(idA)));
-      } catch {
-        if (mounted) setPickList([]);
+      } catch (err) {
+        if (mounted) {
+          setPickList([]);
+          setPickError(err?.message || 'Could not load your simulations.');
+        }
       } finally {
         if (mounted) setPickLoading(false);
       }
     })();
     return () => { mounted = false; };
-  }, [idA, idB]);
+  }, [idA, idB, pickReload]);
 
   useEffect(() => {
     if (!idA || !idB) { setStatus(idA || idB ? 'pick' : 'no-ids'); return; }
@@ -117,6 +127,12 @@ export default function SimulationComparePage() {
         </p>
         {pickLoading ? (
           <div className="compare__loading">Loading your simulations…</div>
+        ) : pickError ? (
+          /* "The list didn't load" is not "you don't have any". */
+          <div className="compare__empty">
+            <p>{pickError}</p>
+            <button onClick={() => setPickReload(n => n + 1)}>Try Again</button>
+          </div>
         ) : pickList.length === 0 ? (
           <div className="compare__empty">
             <p>You need at least two simulations to compare. Run another one first.</p>
