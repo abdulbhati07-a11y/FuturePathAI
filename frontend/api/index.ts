@@ -404,10 +404,13 @@ function buildNotifications(sims: any[]): any[] {
     const at = reportAt ?? iso(s?.updatedAt);
     if (!at) return null;  // no usable timestamp — say nothing rather than guess one
     const title = typeof s.title === 'string' && s.title.trim() ? s.title.trim() : 'Untitled simulation';
+    // `kind` is the structural category; `type` is only a colour. Settings lets
+    // the user switch each kind off, and that filter must key off something
+    // stable rather than off display copy or an id prefix.
     return reportAt
-      ? { id: `report:${s.id}:${at}`, type: 'success', title: 'Report ready',
+      ? { id: `report:${s.id}:${at}`, kind: 'report', type: 'success', title: 'Report ready',
           body: `${title} — your analysis is ready to review.`, at, href: `/simulations/${s.id}/results` }
-      : { id: `draft:${s.id}:${at}`, type: 'warning', title: 'Simulation unfinished',
+      : { id: `draft:${s.id}:${at}`, kind: 'draft', type: 'warning', title: 'Simulation unfinished',
           body: `${title} has no report yet — open it to pick up where you left off.`, at, href: `/simulations/${s.id}/results` };
   }).filter(Boolean) as any[];
   // Newest first and capped, so the drawer is recent activity rather than the

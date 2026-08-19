@@ -14,7 +14,8 @@ export default function NotificationsDrawer({ open, onClose }) {
   const navigate = useNavigate();
   // Same hook as AppNavbar, so the badge here and the badge up there are always
   // the same number — they used to be two independent hardcoded arrays.
-  const { items: notifications, unreadCount, loading, error, markRead, markAllRead } = useNotifications();
+  const { items: notifications, unreadCount, loading, error,
+          hiddenByPrefs, markRead, markAllRead } = useNotifications();
 
   // Close on Escape
   useEffect(() => {
@@ -85,10 +86,22 @@ export default function NotificationsDrawer({ open, onClose }) {
           ) : notifications.length === 0 ? (
             <div className="notif-drawer__empty">
               <Bell size={36} strokeWidth={1.5} />
-              <p>No activity yet.</p>
-              <p className="notif-drawer__empty-sub">
-                Run a simulation and its report will show up here.
-              </p>
+              {/* Muted is not the same as empty — say which one it is. */}
+              {hiddenByPrefs > 0 ? (
+                <>
+                  <p>{hiddenByPrefs} {hiddenByPrefs === 1 ? 'notification' : 'notifications'} hidden.</p>
+                  <p className="notif-drawer__empty-sub">
+                    Your notification preferences are filtering them out. Change them in Settings → Notifications.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p>No activity yet.</p>
+                  <p className="notif-drawer__empty-sub">
+                    Run a simulation and its report will show up here.
+                  </p>
+                </>
+              )}
             </div>
           ) : (
             notifications.map(n => {

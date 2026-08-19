@@ -32,7 +32,8 @@ export default function AppNavbar({ pageTitle, onMenuToggle, menuOpen, activeIte
   // ── Notifications ──────────────────────────────────────────────────────────
   // Real items derived from this user's own simulations; see useNotifications.
   const { items: notifications, unreadCount, loading: notifLoading,
-          error: notifError, markRead, markAllRead } = useNotifications();
+          error: notifError, hiddenByPrefs: notifHidden,
+          markRead, markAllRead } = useNotifications();
   const [notifOpen, setNotifOpen]         = useState(false);
   const notifRef = useRef(null);
 
@@ -363,7 +364,11 @@ export default function AppNavbar({ pageTitle, onMenuToggle, menuOpen, activeIte
                     ) : notifications.length === 0 ? (
                       <div className="app-navbar__notif-state">
                         <Bell size={15} strokeWidth={1.5} />
-                        <span>No activity yet. Run a simulation and its report will appear here.</span>
+                        {/* "Nothing happened" and "you switched it off" are
+                            different facts, so they get different sentences. */}
+                        <span>{notifHidden > 0
+                          ? `${notifHidden} ${notifHidden === 1 ? 'notification is' : 'notifications are'} hidden by your preferences. Change them in Settings → Notifications.`
+                          : 'No activity yet. Run a simulation and its report will appear here.'}</span>
                       </div>
                     ) : notifications.map(n => (
                       <div key={n.id}

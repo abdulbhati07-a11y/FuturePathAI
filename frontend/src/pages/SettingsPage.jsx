@@ -7,6 +7,7 @@ import {
   Sparkles, Eye, EyeOff, AlertCircle, Sun, Moon, Sunset,
 } from 'lucide-react';
 import { apiClient } from '../api/client';
+import { NOTIF_KINDS, loadPrefs, savePrefs } from '../hooks/useNotifications';
 import './AuthPages.css';
 import './SettingsPage.css';
 
@@ -164,12 +165,14 @@ export default function SettingsPage() {
   const [email, setEmail]   = useState(user?.email || '');
   const [saving, setSaving] = useState(false);
 
-  /* Notifications */
-  const [notifs, setNotifs] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('notifPrefs')) ||
-      { simulationComplete: true, advisorAlerts: true, marketUpdates: false, weeklyDigest: true };
-    } catch { return { simulationComplete: true, advisorAlerts: true, marketUpdates: false, weeklyDigest: true }; }
-  });
+  /* Notifications
+     These used to be four switches — "Simulation Complete", "AI Advisor Alerts",
+     "Market Updates", "Weekly Digest" — written to a localStorage key that
+     nothing else in the app ever read. Flipping one changed nothing, and two of
+     them promised email this product has no way to send.
+     Now they are the notification kinds the bell actually emits, and the bell
+     reads the same prefs, so a toggle takes effect immediately. */
+  const [notifs, setNotifs] = useState(loadPrefs);
 
   function showToast(message, type = 'success') {
     toast(message, { type });
@@ -181,14 +184,22 @@ export default function SettingsPage() {
     setSaving(true);
     try {
       await apiClient.patch('/users/me', { name, email });
-    } catch { /* API may not exist yet — still show success */ }
-    setSaving(false);
-    showToast('Profile saved successfully.');
+      showToast('Profile saved successfully.');
+    } catch (err) {
+      // This used to swallow the error and show "Profile saved successfully."
+      // regardless, so a rejected change — a duplicate email, an expired
+      // session, a dropped connection — was reported to the user as saved.
+      showToast(err?.message || 'Could not save your profile. Please try again.', 'error');
+    } finally {
+      setSaving(false);
+    }
   }
 
   /* Save notifications */
   function handleSaveNotifs() {
-    localStorage.setItem('notifPrefs', JSON.stringify(notifs));
+    // savePrefs writes the key the bell reads and fires the change event, so the
+    // badge and drawer update without a reload.
+    setNotifs(savePrefs(notifs));
     showToast('Notification preferences saved.');
   }
 
@@ -200,7 +211,16 @@ export default function SettingsPage() {
 
   /* Delete account */
   async function handleDeleteAccount() {
-    try { await apiClient.delete('/users/me'); } catch { /* ignore */ }
+    try {
+      await apiClient.delete('/users/me');
+    } catch (err) {
+      // This used to ignore the failure and log out anyway, so a user whose
+      // account was NOT deleted was shown the signed-out screen and had every
+      // reason to believe their data was gone. Stay signed in and say so.
+      setDelModal(false);
+      showToast(err?.message || 'Could not delete your account. It is still active — please try again.', 'error');
+      return;
+    }
     logout();
   }
 
@@ -272,17 +292,18 @@ export default function SettingsPage() {
           {activeTab === 'notifications' && (
             <div className="settings-section">
               <h2 className="settings-section__title">Notification Preferences</h2>
-              <p className="settings-section__desc">Choose what updates you receive</p>
+              <p className="settings-section__desc">
+                Choose what appears in your notification bell
+              </p>
               <div className="settings-toggles">
-                {Object.entries({
-                  simulationComplete: 'Simulation Complete',
-                  advisorAlerts:      'AI Advisor Alerts',
-                  marketUpdates:      'Market Updates',
-                  weeklyDigest:       'Weekly Digest',
-                }).map(([key, label]) => (
+                {NOTIF_KINDS.map(({ key, label, desc }) => (
                   <div key={key} className="settings-toggle-row">
-                    <span className="settings-toggle-label">{label}</span>
+                    <span className="settings-toggle-label">
+                      {label}
+                      <span className="settings-toggle-desc">{desc}</span>
+                    </span>
                     <button type="button" role="switch" aria-checked={notifs[key]}
+                      aria-label={label}
                       className={`settings-toggle ${notifs[key] ? 'is-on' : ''}`}
                       onClick={() => setNotifs(p => ({ ...p, [key]: !p[key] }))}>
                       <span className="settings-toggle__thumb" />
@@ -290,6 +311,11 @@ export default function SettingsPage() {
                   </div>
                 ))}
               </div>
+              {/* Said plainly, because the alternative is a switch that pretends
+                  to control something the product cannot do. */}
+              <p className="settings-section__note">
+                Email notifications aren't available yet — everything appears in the app.
+              </p>
               <button type="button" className="settings-save-btn" style={{ marginTop: 24 }} onClick={handleSaveNotifs}>
                 Save Preferences
               </button>

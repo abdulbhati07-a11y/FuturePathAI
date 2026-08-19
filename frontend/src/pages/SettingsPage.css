@@ -232,6 +232,26 @@
 .settings-toggle-label {
   font-size: 14px;
   color: var(--text-primary);
+  /* Now carries a second line explaining what the switch actually controls. */
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-right: 16px;
+}
+
+.settings-toggle-desc {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-tertiary);
+}
+
+/* A plain statement of a product limit, so it reads as information rather than
+   as an error. */
+.settings-section__note {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-tertiary);
+  margin: 16px 0 0;
 }
 
 .settings-toggle {

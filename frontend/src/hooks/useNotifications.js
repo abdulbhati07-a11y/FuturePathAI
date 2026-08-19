@@ -29,8 +29,50 @@ import { apiClient } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 
 const READ_KEY = 'fp:notif:read';
+const PREF_KEY = 'fp:notif:prefs';
 const CHANGED  = 'notifications:read-changed';
 const MAX_READ_IDS = 200;   // bounded so the key cannot grow without limit
+
+/**
+ * The notification kinds a user can switch off, and the only ones Settings shows.
+ *
+ * Settings used to offer four toggles — "Simulation Complete", "AI Advisor
+ * Alerts", "Market Updates", "Weekly Digest" — that wrote to a localStorage key
+ * nothing ever read. Flipping any of them changed nothing anywhere, and two of
+ * them described email this product has no way to send.
+ *
+ * These two are here because the bell can actually honour them: each corresponds
+ * to a `kind` the API emits, so switching one off removes those items from the
+ * badge and the drawer immediately. Anything that cannot be honoured does not
+ * belong in this list.
+ */
+export const NOTIF_KINDS = [
+  { key: 'report', label: 'Report ready',           desc: 'When a simulation\'s report has finished generating.' },
+  { key: 'draft',  label: 'Unfinished simulations', desc: 'A nudge about simulations you started but have not completed.' },
+];
+const DEFAULT_PREFS = { report: true, draft: true };
+
+export function loadPrefs() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(PREF_KEY));
+    if (!raw || typeof raw !== 'object') return { ...DEFAULT_PREFS };
+    // Only known keys, and only booleans — a stale key from an older shape must
+    // not switch off a kind the user never chose to hide.
+    const out = { ...DEFAULT_PREFS };
+    for (const { key } of NOTIF_KINDS) if (typeof raw[key] === 'boolean') out[key] = raw[key];
+    return out;
+  } catch {
+    return { ...DEFAULT_PREFS };
+  }
+}
+
+export function savePrefs(prefs) {
+  const out = {};
+  for (const { key } of NOTIF_KINDS) out[key] = prefs?.[key] !== false;
+  try { localStorage.setItem(PREF_KEY, JSON.stringify(out)); } catch { /* private mode / quota */ }
+  window.dispatchEvent(new CustomEvent(CHANGED));
+  return out;
+}
 
 function loadRead() {
   try {
@@ -82,9 +124,10 @@ export function useNotifications() {
   });
 
   const [readIds, setReadIds] = useState(loadRead);
+  const [prefs, setPrefs]     = useState(loadPrefs);
 
   useEffect(() => {
-    const onChange = () => setReadIds(loadRead());
+    const onChange = () => { setReadIds(loadRead()); setPrefs(loadPrefs()); };
     window.addEventListener(CHANGED, onChange);
     window.addEventListener('storage', onChange);
     return () => {
@@ -99,10 +142,22 @@ export function useNotifications() {
     const read = new Set(readIds);
     return list
       .filter(n => n && typeof n.id === 'string')
+      // An unrecognised kind is shown rather than hidden: a new server-side kind
+      // this build has no toggle for must not silently vanish from the bell.
+      .filter(n => (n.kind in prefs ? prefs[n.kind] : true))
       .map(n => ({ ...n, read: read.has(n.id), time: relativeTime(n.at) }));
-  }, [data, readIds]);
+  }, [data, readIds, prefs]);
 
   const unreadCount = items.reduce((n, i) => n + (i.read ? 0 : 1), 0);
+
+  // How many real items the preferences are hiding. Without this the UI would
+  // show "No activity yet. Run a simulation…" to someone who has simulations and
+  // has simply switched both kinds off — the same species of untrue statement
+  // this whole hook exists to remove.
+  const hiddenByPrefs = useMemo(() => {
+    const list = Array.isArray(data) ? data : (data?.data ?? []);
+    return list.filter(n => n && typeof n.id === 'string').length - items.length;
+  }, [data, items]);
 
   const markRead = useCallback(id => {
     // Re-read storage rather than trusting state, so two components marking items
@@ -117,6 +172,7 @@ export function useNotifications() {
   return {
     items,
     unreadCount,
+    hiddenByPrefs,
     loading: isLoading && !!token,
     // Surfaced so the UI can say "couldn't load" instead of silently showing an
     // empty list, which would read as "you have no activity".
