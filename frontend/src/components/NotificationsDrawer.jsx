@@ -1,14 +1,8 @@
-import { useEffect, useRef } from 'react';
-import { X, Bell, CheckCircle2, Info, AlertTriangle, Check } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { X, Bell, CheckCircle2, Info, AlertTriangle, Check, Loader2 } from 'lucide-react';
+import { useNotifications } from '../hooks/useNotifications';
 import './NotificationsDrawer.css';
-
-const MOCK_NOTIFICATIONS = [
-  { id: 'n1', type: 'success', title: 'Simulation Complete', body: 'Series C Equity analysis is ready to review.', time: '2m ago', read: false },
-  { id: 'n2', type: 'info',    title: 'AI Advisor Update',   body: 'New market correlation data is now available.', time: '1h ago', read: false },
-  { id: 'n3', type: 'warning', title: 'Action Required',     body: 'Primary Residence Pivot needs your input to continue.', time: '3h ago', read: true },
-  { id: 'n4', type: 'info',    title: 'Weekly Digest Ready', body: 'Your personalized decision summary for this week is available.', time: '1d ago', read: true },
-];
 
 const TYPE_META = {
   success: { icon: CheckCircle2, color: 'var(--color-success)' },
@@ -17,10 +11,10 @@ const TYPE_META = {
 };
 
 export default function NotificationsDrawer({ open, onClose }) {
-  const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
-  const overlayRef = useRef(null);
-
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const navigate = useNavigate();
+  // Same hook as AppNavbar, so the badge here and the badge up there are always
+  // the same number — they used to be two independent hardcoded arrays.
+  const { items: notifications, unreadCount, loading, error, markRead, markAllRead } = useNotifications();
 
   // Close on Escape
   useEffect(() => {
@@ -37,12 +31,9 @@ export default function NotificationsDrawer({ open, onClose }) {
     return () => { document.body.style.overflow = ''; };
   }, [open]);
 
-  function markAllRead() {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  }
-
-  function markRead(id) {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  function openNotification(n) {
+    markRead(n.id);
+    if (n.href) { onClose(); navigate(n.href); }
   }
 
   if (!open) return null;
@@ -80,10 +71,24 @@ export default function NotificationsDrawer({ open, onClose }) {
         </div>
 
         <div className="notif-drawer__list">
-          {notifications.length === 0 ? (
+          {loading ? (
+            <div className="notif-drawer__empty">
+              <Loader2 size={30} strokeWidth={1.5} className="spinning" />
+              <p>Loading your activity…</p>
+            </div>
+          ) : error ? (
+            /* Distinguish "nothing happened" from "we could not find out". */
+            <div className="notif-drawer__empty">
+              <AlertTriangle size={32} strokeWidth={1.5} />
+              <p>{error}</p>
+            </div>
+          ) : notifications.length === 0 ? (
             <div className="notif-drawer__empty">
               <Bell size={36} strokeWidth={1.5} />
-              <p>You're all caught up!</p>
+              <p>No activity yet.</p>
+              <p className="notif-drawer__empty-sub">
+                Run a simulation and its report will show up here.
+              </p>
             </div>
           ) : (
             notifications.map(n => {
@@ -92,10 +97,10 @@ export default function NotificationsDrawer({ open, onClose }) {
                 <div
                   key={n.id}
                   className={`notif-drawer__item ${!n.read ? 'is-unread' : ''}`}
-                  onClick={() => markRead(n.id)}
+                  onClick={() => openNotification(n)}
                   role="button"
                   tabIndex={0}
-                  onKeyDown={e => e.key === 'Enter' && markRead(n.id)}
+                  onKeyDown={e => e.key === 'Enter' && openNotification(n)}
                   aria-label={n.title}
                 >
                   <div className="notif-drawer__item-icon" style={{ '--notif-color': color }}>

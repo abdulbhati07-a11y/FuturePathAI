@@ -135,6 +135,20 @@
 
 .notif-drawer__empty p { margin: 0; font-size: 14px; }
 
+/* Secondary line under the empty-state heading — tells a new user what would put
+   something here, instead of the old "You're all caught up!" claim. */
+.notif-drawer__empty-sub {
+  font-size: 13px !important;
+  color: var(--text-tertiary);
+  max-width: 260px;
+  line-height: 1.55;
+}
+
+/* Declared locally, as the other stylesheets in this project do, so the loader
+   spins whether or not another sheet defining it happens to be mounted. */
+.notif-drawer__empty .spinning { animation: notif-spin 0.8s linear infinite; }
+@keyframes notif-spin { to { transform: rotate(360deg); } }
+
 /* ── Item ─────────────────────────────────────────────────── */
 .notif-drawer__item {
   display: flex;

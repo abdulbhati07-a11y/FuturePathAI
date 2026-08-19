@@ -21,6 +21,7 @@ const ReportsPage           = lazy(() => import('./pages/ReportsPage'));
 const AdvisorPage           = lazy(() => import('./pages/AdvisorPage'));
 const SettingsPage          = lazy(() => import('./pages/SettingsPage'));
 const LegalPage             = lazy(() => import('./pages/LegalPage'));
+const AboutPage             = lazy(() => import('./pages/AboutPage'));
 const GalleryPage           = lazy(() => import('./pages/GalleryPage'));
 const SimulationComparePage = lazy(() => import('./pages/SimulationComparePage'));
 const AdminAnalyticsPage    = lazy(() => import('./pages/AdminAnalyticsPage'));
@@ -121,6 +122,7 @@ function AppRoutes() {
         <Route path="/"         element={<LandingPage />} />
         <Route path="/login"    element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/about"    element={<AboutPage />} />
 
         {/* Legal pages */}
         <Route path="/privacy"     element={<LegalPage />} />

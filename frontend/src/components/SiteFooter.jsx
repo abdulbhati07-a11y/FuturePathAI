@@ -1,10 +1,8 @@
 import { useState } from 'react';
 import { Download, Share2, AtSign, Link2, Rss, Check } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
 import './SiteFooter.css';
 
 export default function SiteFooter() {
-  const location = useLocation();
   const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
@@ -61,6 +59,11 @@ export default function SiteFooter() {
             {copied ? <Check size={13} strokeWidth={2.5} /> : <Share2 size={13} strokeWidth={2} />}
             {copied ? 'Link copied!' : 'Share Simulation'}
           </button>
+        </div>
+
+        <div className="site-footer__col">
+          <p className="site-footer__col-heading">Company</p>
+          <a href="/about">About Us</a>
         </div>
 
         <div className="site-footer__col">

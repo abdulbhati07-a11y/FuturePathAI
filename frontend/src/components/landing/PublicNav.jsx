@@ -4,10 +4,13 @@ import { Menu, X, Sparkles } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import './PublicNav.css';
 
+// `hash` links scroll within the landing page; `path` links are real routes.
+// About used to be '#about', which scrolled to the inquiry form — the label
+// promised a page about the company and the anchor delivered a contact form.
 const SECTION_LINKS = [
-  { label: 'Features', href: '#features' },
-  { label: 'Pricing',  href: '#pricing'  },
-  { label: 'About',    href: '#about'    },
+  { label: 'Features', hash: '#features' },
+  { label: 'Pricing',  hash: '#pricing'  },
+  { label: 'About',    path: '/about'    },
 ];
 
 export default function PublicNav() {
@@ -34,10 +37,13 @@ export default function PublicNav() {
 
       {/* Desktop links */}
       <nav className="public-nav__links" aria-label="Primary">
-        {SECTION_LINKS.map(({ label, href }) => {
-          const target = location.pathname === '/' ? href : `/${href}`;
-          return <a key={label} href={target}>{label}</a>;
-        })}
+        {SECTION_LINKS.map(({ label, hash, path }) => (
+          path
+            // A route, so navigate in-app rather than reloading the whole bundle.
+            ? <button key={label} type="button" className={isActive(path) ? 'is-active' : ''}
+                onClick={() => { navigate(path); setMenuOpen(false); }}>{label}</button>
+            : <a key={label} href={location.pathname === '/' ? hash : `/${hash}`}>{label}</a>
+        ))}
 
         <div className="public-nav__divider" aria-hidden="true" />
 
@@ -94,10 +100,13 @@ export default function PublicNav() {
       {menuOpen && (
         <div className="public-nav__drawer" role="dialog" aria-label="Mobile navigation">
           <div className="public-nav__drawer-links">
-            {SECTION_LINKS.map(({ label, href }) => {
-              const target = location.pathname === '/' ? href : `/${href}`;
-              return <a key={label} href={target} onClick={() => setMenuOpen(false)}>{label}</a>;
-            })}
+            {SECTION_LINKS.map(({ label, hash, path }) => (
+              path
+                ? <button key={label} type="button"
+                    onClick={() => { navigate(path); setMenuOpen(false); }}>{label}</button>
+                : <a key={label} href={location.pathname === '/' ? hash : `/${hash}`}
+                    onClick={() => setMenuOpen(false)}>{label}</a>
+            ))}
 
             <div className="public-nav__drawer-divider" />
 

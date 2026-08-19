@@ -371,6 +371,51 @@ function resolveScores(sim: any, stored: any): { riskScore: number | null; confi
   };
 }
 
+// ── Notifications ─────────────────────────────────────────────────────────────
+// Every item is DERIVED from rows the caller owns, so each one is a checkable
+// statement about their own work. The bell used to render four hardcoded items to
+// every account — "Series C Equity analysis is ready to review", "Primary Residence
+// Pivot needs your input" — which a user who registered a minute ago and owned
+// nothing still saw, complete with a permanent "2 unread" badge and invented
+// "2m ago" timestamps. Nothing was ever fetched.
+//
+// Deriving instead of reading a notifications table is deliberate: there is no way
+// for a derived item to outlive, contradict, or precede the simulation it describes.
+//
+// The function is pure and clock-free — no Date.now() — so the same rows always
+// produce the same payload, and the relative time ("2m ago") is formatted on the
+// client from the ISO stamp. That also keeps it directly testable.
+//
+// `at` is the timestamp the item is ABOUT (the report's, when there is one), not
+// when it was assembled, and it is baked into the id: regenerating a report is a
+// genuinely new event, so it must not silently inherit the read state of the one
+// the user already dismissed. Read state is per-id and lives on the client.
+function buildNotifications(sims: any[]): any[] {
+  const iso = (v: any) => {
+    if (v instanceof Date) return Number.isNaN(v.getTime()) ? null : v.toISOString();
+    if (typeof v === 'string' && v) { const d = new Date(v); return Number.isNaN(d.getTime()) ? null : d.toISOString(); }
+    return null;
+  };
+  const items = (Array.isArray(sims) ? sims : []).map((s: any) => {
+    if (!s?.id) return null;
+    // A simulation is unique per report (Report.simulationId is @unique), so at most
+    // one row comes back; take its time so "ready" means when the report last changed.
+    const reportAt = iso(s?.reports?.[0]?.updatedAt);
+    const at = reportAt ?? iso(s?.updatedAt);
+    if (!at) return null;  // no usable timestamp — say nothing rather than guess one
+    const title = typeof s.title === 'string' && s.title.trim() ? s.title.trim() : 'Untitled simulation';
+    return reportAt
+      ? { id: `report:${s.id}:${at}`, type: 'success', title: 'Report ready',
+          body: `${title} — your analysis is ready to review.`, at, href: `/simulations/${s.id}/results` }
+      : { id: `draft:${s.id}:${at}`, type: 'warning', title: 'Simulation unfinished',
+          body: `${title} has no report yet — open it to pick up where you left off.`, at, href: `/simulations/${s.id}/results` };
+  }).filter(Boolean) as any[];
+  // Newest first and capped, so the drawer is recent activity rather than the
+  // user's entire history restated back to them.
+  items.sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0));
+  return items.slice(0, 12);
+}
+
 // ── AI helpers ────────────────────────────────────────────────────────────────
 async function aiChat(messages: any[], stream = false): Promise<Response> {
   // Primary: Groq (fast, free). Automatic fallback: Google Gemini via its
@@ -452,7 +497,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // route table readable and lets the same handler run locally at either path.
   const path = url.split('?')[0].replace(/^\/api(?=\/|$)/, '').replace(/\/$/, '') || '/';
   const p = (prefix: string) => path.startsWith(prefix);
-  const seg = (n: number) => path.split('/')[n] || '';
   const prisma = db();
 
   try {
@@ -696,7 +740,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         send('suggestions', QUICK_ANSWERS[detectCategory(convoText)] ?? QUICK_ANSWERS.PERSONAL);
         send('insight',{label:'LIVE PATH INSIGHT',message:'Your responses are shaping the probability model.'});
         send('done','');
-      } catch(e:any) { send('error', e.message); }
+      } catch(e:any) {
+        // Same rule as the outer handler: log the real error, tell the browser
+        // nothing about our internals. This used to stream e.message straight to
+        // the client, so a driver or upstream failure leaked its text into the chat.
+        console.error('API error (chat stream):', e);
+        send('error', 'The AI service is unavailable right now. Please try again.');
+      }
       res.end(); return;
     }
 
@@ -870,6 +920,24 @@ Return ONLY raw JSON with EXACTLY these keys and shapes: bestCase/mostLikely/wor
         if (!sim?.isPublic) return err(res, 'Forbidden', 403);
       }
       return ok(res, { id:report.id, simulationId:report.simulationId, summary:report.summary, timeline: typeof report.timeline==='string'?JSON.parse(report.timeline):report.timeline, recommendations: typeof report.recommendations==='string'?JSON.parse(report.recommendations):report.recommendations, scores: typeof report.scores==='string'?JSON.parse(report.scores):report.scores, createdAt:report.createdAt, updatedAt:report.updatedAt });
+    }
+
+    // ── /notifications ────────────────────────────────────────────────────────
+    // Derived from the caller's own simulations and their reports — see
+    // buildNotifications for why there is no notifications table behind this.
+    if (path === '/notifications' && req.method === 'GET') {
+      const u = auth(req, res); if (!u) return;
+      const sims = await prisma.simulation.findMany({
+        where: { userId: u.sub },
+        orderBy: { updatedAt: 'desc' },
+        take: 25,
+        select: {
+          id: true, title: true, updatedAt: true,
+          reports: { select: { updatedAt: true }, take: 1 },
+        },
+      });
+      const items = buildNotifications(sims);
+      return ok(res, { data: items, meta: { total: items.length } });
     }
 
     // ── 404 fallback ──────────────────────────────────────────────────────────

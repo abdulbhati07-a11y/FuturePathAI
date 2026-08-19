@@ -6,7 +6,8 @@
 
 .site-footer__top {
   display: grid;
-  grid-template-columns: 1.8fr 1fr 1fr 1fr;
+  /* brand + Actions/Company/Legal/Connect. The brand column stays wider. */
+  grid-template-columns: 1.8fr repeat(4, 1fr);
   gap: 32px;
   padding-bottom: 40px;
   border-bottom: 1px solid var(--border-subtle);

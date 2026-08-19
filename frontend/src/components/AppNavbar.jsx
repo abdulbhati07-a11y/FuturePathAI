@@ -9,13 +9,8 @@ import {
 import { useAuth }         from '../context/AuthContext';
 import { useTheme }        from '../context/ThemeContext';
 import { useGlobalSearch } from '../hooks/useGlobalSearch';
+import { useNotifications } from '../hooks/useNotifications';
 import './AppNavbar.css';
-
-const MOCK_NOTIFICATIONS = [
-  { id: 'n1', type: 'success', title: 'Simulation Complete', body: 'Series C Equity analysis is ready.', time: '2m ago', read: false },
-  { id: 'n2', type: 'info',    title: 'AI Advisor Update',   body: 'New market correlation data available.', time: '1h ago', read: false },
-  { id: 'n3', type: 'warning', title: 'Action Required',     body: 'Primary Residence Pivot needs your input.', time: '3h ago', read: true },
-];
 
 const APP_NAV_ITEMS = [
   { id: 'home',           label: 'Home',          path: '/' },
@@ -35,10 +30,11 @@ export default function AppNavbar({ pageTitle, onMenuToggle, menuOpen, activeIte
 
 
   // ── Notifications ──────────────────────────────────────────────────────────
-  const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
+  // Real items derived from this user's own simulations; see useNotifications.
+  const { items: notifications, unreadCount, loading: notifLoading,
+          error: notifError, markRead, markAllRead } = useNotifications();
   const [notifOpen, setNotifOpen]         = useState(false);
   const notifRef = useRef(null);
-  const unreadCount = notifications.filter(n => !n.read).length;
 
   // ── Profile dropdown ───────────────────────────────────────────────────────
   const [profileOpen, setProfileOpen] = useState(false);
@@ -153,11 +149,12 @@ export default function AppNavbar({ pageTitle, onMenuToggle, menuOpen, activeIte
   }
 
   // ── Notifications ──────────────────────────────────────────────────────────
-  function markAllRead() {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  }
-  function markRead(id) {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  // Opening an item marks it read and goes to the simulation it is about, so the
+  // dropdown is navigable rather than decorative.
+  function openNotification(n) {
+    markRead(n.id);
+    setNotifOpen(false);
+    if (n.href) navigate(n.href);
   }
 
   function handleLogout() {
@@ -351,11 +348,28 @@ export default function AppNavbar({ pageTitle, onMenuToggle, menuOpen, activeIte
                     )}
                   </div>
                   <div className="app-navbar__notif-list">
-                    {notifications.map(n => (
+                    {notifLoading ? (
+                      <div className="app-navbar__notif-state">
+                        <Loader2 size={15} strokeWidth={2} className="spinning" />
+                        <span>Loading…</span>
+                      </div>
+                    ) : notifError ? (
+                      /* An empty list and a failed request look identical to the
+                         user unless we say which happened. */
+                      <div className="app-navbar__notif-state">
+                        <Bell size={15} strokeWidth={1.5} />
+                        <span>{notifError}</span>
+                      </div>
+                    ) : notifications.length === 0 ? (
+                      <div className="app-navbar__notif-state">
+                        <Bell size={15} strokeWidth={1.5} />
+                        <span>No activity yet. Run a simulation and its report will appear here.</span>
+                      </div>
+                    ) : notifications.map(n => (
                       <div key={n.id}
                         className={`app-navbar__notif-item ${!n.read ? 'is-unread' : ''} notif-type--${n.type}`}
-                        onClick={() => markRead(n.id)} role="button" tabIndex={0}
-                        onKeyDown={e => e.key === 'Enter' && markRead(n.id)}>
+                        onClick={() => openNotification(n)} role="button" tabIndex={0}
+                        onKeyDown={e => e.key === 'Enter' && openNotification(n)}>
                         <div className="app-navbar__notif-dot" />
                         <div className="app-navbar__notif-body">
                           <p className="app-navbar__notif-title">{n.title}</p>
