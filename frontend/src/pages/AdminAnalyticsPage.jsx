@@ -5,7 +5,7 @@ import { apiClient } from '../api/client';
 import { cssVar } from '../utils/cssVar';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip,
-  ResponsiveContainer, CartesianGrid, Legend,
+  ResponsiveContainer, CartesianGrid,
 } from 'recharts';
 import './AdminAnalyticsPage.css';
 
@@ -35,16 +35,14 @@ export default function AdminAnalyticsPage() {
 
     async function load() {
       try {
-        const [simsRaw, usersRaw] = await Promise.all([
-          apiClient.get('/simulations?limit=500'),
+        // Platform aggregates come from /admin/analytics. They used to be derived
+        // from /simulations, which only ever returns the caller's own rows.
+        const [statsRaw, usersRaw] = await Promise.all([
+          apiClient.get('/admin/analytics'),
           apiClient.get('/admin/users'),
         ]);
-        const sims = Array.isArray(simsRaw) ? simsRaw : (simsRaw?.data ?? []);
         const usersData = Array.isArray(usersRaw) ? usersRaw : (usersRaw?.data ?? []);
-        const totalSims = sims.length;
-        const completed = sims.filter(s => s.status === 'COMPLETED').length;
-        const avgRisk = totalSims ? Math.round(sims.reduce((a, s) => a + (s.riskScore || 0), 0) / totalSims) : 0;
-        setAnalytics({ totalSimulations: totalSims, completedSimulations: completed, averageRisk: avgRisk, totalUsers: usersData.length });
+        setAnalytics(statsRaw ?? {});
         setUsers(usersData);
         setStatus('ready');
       } catch (err) {
@@ -78,10 +76,9 @@ export default function AdminAnalyticsPage() {
     );
   }
 
-  // Normalise analytics shape — backend may vary
-  const stats = analytics?.stats ?? analytics ?? {};
-  const simsByDay = analytics?.simulationsByDay ?? analytics?.byDay ?? [];
-  const simsByCategory = analytics?.simulationsByCategory ?? analytics?.byCategory ?? [];
+  const stats = analytics ?? {};
+  const simsByDay = stats.simulationsByDay ?? [];
+  const simsByCategory = stats.simulationsByCategory ?? [];
 
   // Recharts SVG props need a real colour at runtime (a `var()` won't paint),
   // so read the brand primary from the active theme.
@@ -103,9 +100,23 @@ export default function AdminAnalyticsPage() {
       <div className="admin__stats-grid">
         <StatCard label="Total Users" value={stats.totalUsers} accent="var(--color-primary)" />
         <StatCard label="Total Simulations" value={stats.totalSimulations} accent="var(--color-success)" />
+        <StatCard label="Completed" value={stats.completedSimulations} accent="var(--color-success)"
+          sub={stats.totalSimulations
+            ? `${Math.round((stats.completedSimulations / stats.totalSimulations) * 100)}% of all runs`
+            : null}
+        />
         <StatCard label="Reports Generated" value={stats.totalReports} accent="var(--color-warning)" />
+        {/* Null when nothing has been scored — an unscored platform is not a 0% risk one. */}
+        <StatCard label="Average Risk" value={stats.averageRisk == null ? null : `${stats.averageRisk}%`}
+          accent="var(--color-warning)"
+          sub={stats.averageRisk == null ? 'No scored simulations yet' : null}
+        />
+        {/* The conversion sub-label needs both figures — premiumUsers used to be
+            absent entirely, which rendered a literal "NaN% conversion". */}
         <StatCard label="Premium Users" value={stats.premiumUsers} accent="var(--color-secondary)"
-          sub={stats.totalUsers ? `${Math.round((stats.premiumUsers / stats.totalUsers) * 100)}% conversion` : null}
+          sub={stats.totalUsers && stats.premiumUsers != null
+            ? `${Math.round((stats.premiumUsers / stats.totalUsers) * 100)}% conversion`
+            : null}
         />
       </div>
 

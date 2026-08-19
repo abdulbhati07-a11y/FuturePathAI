@@ -61,6 +61,12 @@
   color: var(--color-primary);
 }
 
+/* No probability in the report — muted, so it can't read as a real 0% forecast. */
+.scenario-card__probability--none {
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
+
 .scenario-card__title {
   font-size: 14.5px;
   font-weight: 700;

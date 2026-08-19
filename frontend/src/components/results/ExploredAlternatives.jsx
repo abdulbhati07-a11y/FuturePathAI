@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
-import { toText, toArray, toNumber } from './reportContent';
+import { toText, toArray, toScore } from './reportContent';
 import './ExploredAlternatives.css';
 
 export default function ExploredAlternatives({ alternatives }) {
@@ -9,8 +9,11 @@ export default function ExploredAlternatives({ alternatives }) {
   const list = toArray(alternatives);
   if (list.length === 0) return null;
 
-  // Score → color
+  // Score → color. `null` gets its own muted class: an alternative the report
+  // gave no score for must not be painted danger-red, and a plain-string
+  // alternative (no `score` field at all) used to land there via toNumber's 0.
   function scoreCls(score) {
+    if (score === null) return 'score--none';
     if (score >= 70) return 'score--high';
     if (score >= 50) return 'score--mid';
     return 'score--low';
@@ -26,7 +29,7 @@ export default function ExploredAlternatives({ alternatives }) {
         {list.map((alt, i) => {
           const title = typeof alt === 'string' ? alt : toText(alt, ['title', 'name', 'label', 'option']);
           const subtitle = typeof alt === 'string' ? '' : toText(alt, ['subtitle', 'description', 'detail', 'summary']);
-          const score = toNumber(alt?.score);
+          const score = toScore(alt?.score);
           return (
             <button
               key={alt?.id ?? i}
@@ -40,7 +43,7 @@ export default function ExploredAlternatives({ alternatives }) {
                 <p className="explored-alts__subtitle">{subtitle}</p>
               </div>
               <div className="explored-alts__row-right">
-                <span className={`explored-alts__score ${scoreCls(score)}`}>{score}</span>
+                <span className={`explored-alts__score ${scoreCls(score)}`}>{score === null ? '—' : score}</span>
                 <ArrowRight size={14} strokeWidth={2} className="explored-alts__arrow" />
               </div>
             </button>

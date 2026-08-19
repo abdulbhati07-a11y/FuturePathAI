@@ -102,6 +102,8 @@
 .explored-alts__score.score--high { color: var(--color-success); }
 .explored-alts__score.score--mid  { color: var(--color-warning); }
 .explored-alts__score.score--low  { color: var(--color-danger);  }
+/* No score in the report — muted, and never mistaken for a scored zero. */
+.explored-alts__score.score--none { color: var(--text-tertiary); font-weight: 400; }
 
 /* Head row */
 .explored-alts__head {

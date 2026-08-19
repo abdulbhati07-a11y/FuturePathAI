@@ -103,6 +103,36 @@
   letter-spacing: 0.05em;
 }
 
+/* A chart can't draw an absent score, so the omission is stated rather than
+   silently filled with a zero. */
+.compare__chart-note {
+  margin: 0.6rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: var(--text-tertiary);
+}
+
+.compare__chart-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  min-height: 160px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.compare__chart-empty p {
+  margin: 0;
+}
+
+.compare__chart-empty-sub {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+}
+
 /* Head-to-head */
 .compare__metric-header {
   display: grid;

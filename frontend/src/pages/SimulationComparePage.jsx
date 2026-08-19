@@ -167,11 +167,32 @@ export default function SimulationComparePage() {
     b: m.get(simB, reportB),
   }));
 
-  // Charts only plot metrics at least one side actually has, so an unreported
-  // metric is omitted rather than drawn as a zero.
-  const radarData = metrics
-    .filter(m => m.a !== null || m.b !== null)
-    .map(m => ({ metric: m.label, A: m.a ?? 0, B: m.b ?? 0 }));
+  // A radar vertex and a bar can only be drawn from a number, and Recharts plots
+  // a nullish value at zero (Radar.js: `isNullish(pointValue) ? 0 : …`) — so a
+  // metric only one side reported would draw the other side as a scored 0, which
+  // is the same fabrication as showing "0%" in the table. The charts therefore
+  // plot only the metrics both sides have; the Head-to-Head table below still
+  // lists every metric, one-sided ones included, so nothing is quietly dropped.
+  const comparable = metrics.filter(m => m.a !== null && m.b !== null);
+  const chartData = comparable.map(m => ({ metric: m.label, A: m.a, B: m.b }));
+  const oneSided = metrics.filter(m => (m.a === null) !== (m.b === null));
+
+  const chartNote = oneSided.length > 0 ? (
+    <p className="compare__chart-note">
+      Charted: only metrics both paths reported.{' '}
+      {oneSided.map(m => m.label).join(', ')} {oneSided.length === 1 ? 'is' : 'are'} reported
+      for one path only — see Head-to-Head.
+    </p>
+  ) : null;
+
+  const emptyChart = (
+    <div className="compare__chart-empty">
+      <p>No metric is reported for both paths yet.</p>
+      <p className="compare__chart-empty-sub">
+        Generate the report for each simulation to compare them side by side.
+      </p>
+    </div>
+  );
 
   // Recharts SVG props need real colours at runtime. Series A uses the brand
   // primary, series B the success token — distinguishable in every theme.
@@ -207,15 +228,20 @@ export default function SimulationComparePage() {
       <div className="compare__grid">
         <div className="compare__card">
           <h3 className="compare__card-title">Score Radar</h3>
-          <ResponsiveContainer width="100%" height={260}>
-            <RadarChart data={radarData}>
-              <PolarGrid stroke={gridColor} />
-              <PolarAngleAxis dataKey="metric" tick={{ fill: axisColor, fontSize: 11 }} />
-              <Radar name={simA?.title || 'A'} dataKey="A" stroke={colorA} fill={colorA} fillOpacity={0.25} />
-              <Radar name={simB?.title || 'B'} dataKey="B" stroke={colorB} fill={colorB} fillOpacity={0.2} />
-              <Legend />
-            </RadarChart>
-          </ResponsiveContainer>
+          {chartData.length === 0 ? emptyChart : (
+            <>
+              <ResponsiveContainer width="100%" height={260}>
+                <RadarChart data={chartData}>
+                  <PolarGrid stroke={gridColor} />
+                  <PolarAngleAxis dataKey="metric" tick={{ fill: axisColor, fontSize: 11 }} />
+                  <Radar name={simA?.title || 'A'} dataKey="A" stroke={colorA} fill={colorA} fillOpacity={0.25} />
+                  <Radar name={simB?.title || 'B'} dataKey="B" stroke={colorB} fill={colorB} fillOpacity={0.2} />
+                  <Legend />
+                </RadarChart>
+              </ResponsiveContainer>
+              {chartNote}
+            </>
+          )}
         </div>
 
         <div className="compare__card">
@@ -235,19 +261,24 @@ export default function SimulationComparePage() {
 
         <div className="compare__card compare__card--wide">
           <h3 className="compare__card-title">Score Overview</h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={radarData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
-              <XAxis dataKey="metric" tick={{ fill: axisColor, fontSize: 11 }} />
-              <YAxis domain={[0, 100]} tick={{ fill: axisColor, fontSize: 11 }} />
-              <Tooltip
-                contentStyle={{ background: tooltipBg, border: `1px solid ${tooltipBorder}`, borderRadius: 8 }}
-                labelStyle={{ color: tooltipLabel }}
-              />
-              <Legend />
-              <Bar dataKey="A" name={simA?.title || 'Sim A'} fill={colorA} radius={[4,4,0,0]} />
-              <Bar dataKey="B" name={simB?.title || 'Sim B'} fill={colorB} radius={[4,4,0,0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          {chartData.length === 0 ? emptyChart : (
+            <>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+                  <XAxis dataKey="metric" tick={{ fill: axisColor, fontSize: 11 }} />
+                  <YAxis domain={[0, 100]} tick={{ fill: axisColor, fontSize: 11 }} />
+                  <Tooltip
+                    contentStyle={{ background: tooltipBg, border: `1px solid ${tooltipBorder}`, borderRadius: 8 }}
+                    labelStyle={{ color: tooltipLabel }}
+                  />
+                  <Legend />
+                  <Bar dataKey="A" name={simA?.title || 'Sim A'} fill={colorA} radius={[4,4,0,0]} />
+                  <Bar dataKey="B" name={simB?.title || 'Sim B'} fill={colorB} radius={[4,4,0,0]} />
+                </BarChart>
+              </ResponsiveContainer>
+              {chartNote}
+            </>
+          )}
         </div>
       </div>
 

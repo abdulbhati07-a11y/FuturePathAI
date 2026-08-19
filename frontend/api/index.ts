@@ -104,6 +104,42 @@ function mapSim(s: any) {
     updatedAt: s.updatedAt,
   };
 }
+
+// ── Admin analytics helpers ───────────────────────────────────────────────────
+// UTC midnight `windowDays - 1` days back, so the window ends with a full
+// present-day bucket. Deliberately UTC, not local: the day keys below are cut
+// from toISOString(), and mixing local midnight with UTC keys would silently
+// drop today's rows into a bucket the series never seeded.
+function dayWindowStart(windowDays: number) {
+  const d = new Date(Date.now() - (windowDays - 1) * 864e5);
+  d.setUTCHours(0, 0, 0, 0);
+  return d;
+}
+
+// Every day in the window is seeded, so a quiet day plots as an honest 0 instead
+// of vanishing and letting the chart draw a straight line between two distant
+// dates. Labels are MM-DD for the axis.
+function bucketByDay(dates: (Date | string)[], since: Date, windowDays: number) {
+  const days = new Map<string, number>();
+  for (let i = 0; i < windowDays; i++) {
+    days.set(new Date(since.getTime() + i * 864e5).toISOString().slice(0, 10), 0);
+  }
+  for (const raw of dates) {
+    const k = new Date(raw).toISOString().slice(0, 10);
+    if (days.has(k)) days.set(k, days.get(k)! + 1);
+  }
+  return [...days].map(([date, count]) => ({ date: date.slice(5), count }));
+}
+
+// `roles` is a Json column; some rows hold it as a JSON *string* rather than an
+// array, so a plain `.includes` on the raw value would quietly count zero.
+function countRole(rows: { roles: any }[], role: string) {
+  return rows.filter(row => {
+    let r: any = row.roles;
+    if (!Array.isArray(r)) { try { r = JSON.parse(r || '[]'); } catch { r = []; } }
+    return Array.isArray(r) && r.includes(role);
+  }).length;
+}
 // ── Simulation answers ────────────────────────────────────────────────────────
 // `answers` holds the real conversation so the report can be grounded on it:
 //   { transcript: [{role,content}, …ordered AI questions + user answers],
@@ -443,7 +479,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (path === '/simulations') {
       const u = auth(req, res); if (!u) return;
       if (req.method === 'GET') {
-        const page = parseInt(req.query.page as string) || 1, limit = parseInt(req.query.limit as string) || 10;
+        // Both are clamped: an unbounded `limit` let one request ask for every
+        // row the caller owns, and `page=-1` produced a negative Prisma `skip`,
+        // which throws a 500 instead of returning an empty page.
+        const page = Math.max(1, parseInt(req.query.page as string) || 1);
+        const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 10));
         const where: any = { userId: u.sub };
         if (req.query.status)   where.status   = req.query.status;
         if (req.query.category) where.category = req.query.category;
@@ -624,6 +664,51 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (path === '/analytics/system-meta' && req.method === 'GET') {
       const u = auth(req, res); if (!u) return;
       return ok(res, { simulationUptime:+(99.95+Math.random()*0.04).toFixed(2), lastRecalc:`${Math.floor(Math.random()*120)+1}s ago` });
+    }
+
+    // ── /admin/analytics (ADMIN only) ────────────────────────────────────────
+    // Platform-wide aggregates. The admin dashboard used to derive these from
+    // GET /simulations, which is scoped to `userId: u.sub` — so "Total
+    // Simulations" described only the admin's own rows, while totalReports and
+    // premiumUsers were never produced at all (their cards rendered a permanent
+    // '—' and the conversion sub-label rendered "NaN% conversion").
+    if (path === '/admin/analytics' && req.method === 'GET') {
+      const u = auth(req, res); if (!u) return;
+      const roles = Array.isArray(u.roles) ? u.roles : [];
+      if (!roles.includes('ADMIN')) return err(res, 'Forbidden — ADMIN role required', 403);
+
+      const WINDOW_DAYS = 14;
+      const since = dayWindowStart(WINDOW_DAYS);
+
+      const [totalUsers, totalSimulations, completedSimulations, totalReports, riskAgg, byCategory, recent, roleRows] =
+        await Promise.all([
+          prisma.user.count(),
+          prisma.simulation.count(),
+          prisma.simulation.count({ where: { status: 'COMPLETED' } }),
+          prisma.report.count(),
+          // SQL AVG skips NULLs, which is exactly the intent: average the
+          // simulations that were actually scored rather than counting every
+          // unscored draft as a zero and dragging the mean toward 0.
+          prisma.simulation.aggregate({ _avg: { riskScore: true } }),
+          prisma.simulation.groupBy({ by: ['category'], _count: { _all: true } }),
+          prisma.simulation.findMany({ where: { createdAt: { gte: since } }, select: { createdAt: true } }),
+          // `roles` is a Json column that some rows hold as a JSON *string*
+          // (hence the defensive parse in /admin/users), so PREMIUM is counted
+          // here instead of with a jsonb containment query that would miss them.
+          prisma.user.findMany({ select: { roles: true } }),
+        ]);
+
+      const avgRisk = riskAgg._avg?.riskScore;
+      return ok(res, {
+        totalUsers, totalSimulations, completedSimulations, totalReports,
+        premiumUsers: countRole(roleRows, 'PREMIUM'),
+        // null, not 0, when nothing has been scored yet.
+        averageRisk: avgRisk === null || avgRisk === undefined ? null : Math.round(Number(avgRisk)),
+        simulationsByDay: bucketByDay(recent.map((s: any) => s.createdAt), since, WINDOW_DAYS),
+        simulationsByCategory: byCategory
+          .map((c: any) => ({ category: c.category, count: c._count?._all ?? c._count ?? 0 }))
+          .sort((a: any, b: any) => b.count - a.count),
+      });
     }
 
     // ── /admin/users (ADMIN only) ────────────────────────────────────────────

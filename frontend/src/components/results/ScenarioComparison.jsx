@@ -1,4 +1,4 @@
-import { toText, toNumber, parseMoney, formatUSD } from './reportContent';
+import { toText, toScore, parseMoney, formatUSD } from './reportContent';
 import './ScenarioComparison.css';
 
 function ScenarioCard({ scenario, isFeatured }) {
@@ -6,7 +6,9 @@ function ScenarioCard({ scenario, isFeatured }) {
   // Fields come from the AI; coerce each to a primitive so a stray nested
   // object can't crash the render.
   const label = toText(scenario.label);
-  const probability = toNumber(scenario.probability);
+  // toScore, not toNumber: a scenario the report gave no probability for used to
+  // be presented as a confident "0% PROB." — a real forecast of near-impossible.
+  const probability = toScore(scenario.probability);
   const title = toText(scenario.title, ['title', 'headline', 'summary']);
   const description = toText(scenario.description, ['description', 'detail', 'text']);
   const salaryDelta = toText(scenario.salaryDelta, ['salaryDelta', 'salary', 'value']);
@@ -17,7 +19,9 @@ function ScenarioCard({ scenario, isFeatured }) {
       {isFeatured && <span className="scenario-card__badge">MOST PROB.</span>}
       <div className="scenario-card__head">
         <span className="scenario-card__label">{label}</span>
-        <span className="scenario-card__probability">{probability}% PROB.</span>
+        <span className={`scenario-card__probability${probability === null ? ' scenario-card__probability--none' : ''}`}>
+          {probability === null ? '—' : `${probability}% PROB.`}
+        </span>
       </div>
       <h3 className="scenario-card__title">{title}</h3>
       <p className="scenario-card__description">{description}</p>
