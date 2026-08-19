@@ -345,6 +345,32 @@ function calcScores(answers: any, report?: any): { riskScore: number | null; con
   return { riskScore: risk, confidenceScore: conf, decisionScore: decision };
 }
 
+// Pick which copy of the risk/decision/confidence triple to report.
+//
+// `reports.scores` is where the triple is computed; the three columns on
+// `simulations` are a denormalized copy kept so lists can sort and filter without
+// joining `reports`. Two stores means they can disagree, and both directions
+// really happen: rows written before commit dbdc07d have a scored report and NULL
+// columns, while /analyze recomputes the columns from the user's current answers.
+//
+// The choice is made once for the whole triple rather than per field. They are one
+// projection, and they are read against each other — the verdict comes from
+// decision while the risk band is printed beside it — so pairing a stale column
+// with a fresh report figure would describe a forecast that never existed. Taking
+// the columns only when all three are present means a row torn mid-write falls
+// back to the report as a coherent whole instead of being patched field by field.
+function resolveScores(sim: any, stored: any): { riskScore: number | null; confidenceScore: number | null; decisionScore: number | null } {
+  const complete = sim?.riskScore !== null && sim?.riskScore !== undefined
+    && sim?.decisionScore !== null && sim?.decisionScore !== undefined
+    && sim?.confidenceScore !== null && sim?.confidenceScore !== undefined;
+  const src = complete ? sim : stored;
+  return {
+    riskScore:       pct(src?.riskScore),
+    confidenceScore: pct(src?.confidenceScore),
+    decisionScore:   pct(src?.decisionScore),
+  };
+}
+
 // ── AI helpers ────────────────────────────────────────────────────────────────
 async function aiChat(messages: any[], stream = false): Promise<Response> {
   // Primary: Groq (fast, free). Automatic fallback: Google Gemini via its
@@ -538,6 +564,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const data: any = { status: 'COMPLETED' };
       if (scores.decisionScore !== null) Object.assign(data, scores);
       const updated = await prisma.simulation.update({ where: { id }, data });
+      // Keep both stores in lockstep. Re-analyzing recomputes from the same
+      // projection but with the user's current answers, so the evidence term (and
+      // with it confidence) can move; writing only the simulation columns would
+      // leave reports.scores behind, and the two disagree from then on — the
+      // compare page reads the report first while the results page prefers the
+      // columns, so the same simulation would show two different figures.
+      if (existing && scores.decisionScore !== null) {
+        await prisma.report.update({ where: { simulationId: id }, data: { scores: JSON.stringify(scores) } });
+      }
       return ok(res, { id: updated.id, status: updated.status, ...scores });
     }
 
@@ -562,15 +597,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // invented: no report means no verdict, no confidence and no date, so the
       // UI can render an honest empty state instead of a confident-looking one.
       //
-      // The report holds the scores it computed; the columns on the simulation are
-      // a denormalized copy kept so lists can sort and filter without a join. When
-      // the copy is missing the report still knows the answer, so fall back to it
-      // rather than reporting "Not assessed" over a report that plainly has
-      // figures. Without this the compare page (which already reads the report
-      // first) and this page disagree about the very same simulation.
-      const risk = sim.riskScore ?? pct(stored?.riskScore);
-      const dec  = sim.decisionScore ?? pct(stored?.decisionScore);
-      const conf = sim.confidenceScore ?? pct(stored?.confidenceScore);
+      // Which of the two stores the scores come from — and why it is decided for
+      // the triple as a whole — is documented on resolveScores.
+      const { riskScore: risk, decisionScore: dec, confidenceScore: conf } = resolveScores(sim, stored);
       const verdict = dec === null ? null
         : dec >= 75 ? 'RECOMMENDED'
         : dec >= 60 ? 'PROCEED WITH CARE'
