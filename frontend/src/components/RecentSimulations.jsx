@@ -3,8 +3,11 @@ import { FilePlus2, ArrowRight } from 'lucide-react';
 import './RecentSimulations.css';
 
 const TAG_STYLES = {
-  'SAFE PATH':      'tag--safe',
-  'PENDING ACTION': 'tag--pending',
+  'SAFE PATH':         'tag--safe',
+  'PROCEED WITH CARE': 'tag--caution',
+  'HIGH RISK':         'tag--risk',
+  'COMPLETED':         'tag--neutral',
+  'PENDING ACTION':    'tag--pending',
 };
 
 function SimulationCard({ simulation, onReview }) {

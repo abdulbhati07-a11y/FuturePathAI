@@ -62,15 +62,45 @@ function auth(req: VercelRequest, res: VercelResponse) {
 }
 
 // ── Simulation mapper ─────────────────────────────────────────────────────────
+// Every derived field here stays null until the underlying score exists. An
+// unscored draft has no risk level, no confidence and no grade — coercing the
+// absent score to 0 used to make the dashboard state "Low risk · 0% · SAFE PATH"
+// about a decision nothing had analysed yet. The UI already renders '—' for null.
+function riskBand(risk: number | null) {
+  if (risk === null) return null;
+  return risk < 30 ? 'Low' : risk < 70 ? 'Med' : 'High';
+}
+
+function decisionGrade(score: number | null) {
+  if (score === null) return null;
+  if (score >= 90) return 'A+';
+  if (score >= 80) return 'A';
+  if (score >= 70) return 'B';
+  if (score >= 60) return 'C';
+  if (score >= 50) return 'D';
+  return 'F';
+}
+
+// The tag summarises what we actually know, so a finished high-risk decision is
+// never labelled a safe path.
+function statusTag(status: string, risk: number | null) {
+  if (status !== 'COMPLETED') return 'PENDING ACTION';
+  if (risk === null) return 'COMPLETED';
+  if (risk < 30) return 'SAFE PATH';
+  if (risk < 70) return 'PROCEED WITH CARE';
+  return 'HIGH RISK';
+}
+
 function mapSim(s: any) {
-  const r = s.riskScore ?? 0;
+  const risk = s.riskScore ?? null;
+  const decision = s.decisionScore ?? null;
   return {
     id: s.id, title: s.title, category: s.category, status: s.status, isPublic: s.isPublic,
-    riskLevel: r < 30 ? 'Low' : r < 70 ? 'Med' : 'High', riskPercent: r,
-    confidenceScore: s.confidenceScore ?? 0, decisionScore: s.decisionScore,
-    riskScore: s.riskScore, answers: s.answers, generatedQuestions: s.generatedQuestions,
-    decisionGrade: s.decisionScore ? (s.decisionScore > 90 ? 'A+' : s.decisionScore > 80 ? 'A' : 'B') : 'N/A',
-    statusTag: s.status === 'COMPLETED' ? 'SAFE PATH' : 'PENDING ACTION',
+    riskLevel: riskBand(risk), riskPercent: risk,
+    confidenceScore: s.confidenceScore ?? null, decisionScore: decision,
+    riskScore: risk, answers: s.answers, generatedQuestions: s.generatedQuestions,
+    decisionGrade: decisionGrade(decision),
+    statusTag: statusTag(s.status, risk),
     updatedAt: s.updatedAt,
   };
 }

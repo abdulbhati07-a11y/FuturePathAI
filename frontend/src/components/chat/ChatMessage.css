@@ -177,13 +177,12 @@
     max-width: 92%;
   }
 
-  .chat-message__options {
-    max-height: 120px;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    flex-shrink: 0;
-  }
-
+  /* No max-height here on purpose. Capping the options at 120px used to be the
+     only way to keep the composer reachable while .new-sim-page had no working
+     inner scroller — but it hid options C and D behind a nested scroll inside a
+     chat bubble, with no affordance to reveal them. The thread itself scrolls
+     now (see min-height:0 in NewSimulationPage.css), so every option is
+     reachable by scrolling the conversation. */
   .chat-message__option-chip {
     padding: 6px 10px;
     font-size: 11.5px;

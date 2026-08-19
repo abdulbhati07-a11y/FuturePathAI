@@ -185,9 +185,12 @@ export default function HistoryPage() {
             {filtered.map(sim => {
               const meta = STATUS_META[sim.status] || STATUS_META.DRAFT;
               const StatusIcon = meta.icon;
-              const riskScore = sim.riskScore ?? sim.riskPercent ?? 0;
-              const riskLevel = riskScore < 30 ? 'Low' : riskScore < 70 ? 'Med' : 'High';
-              const riskCls = riskScore < 30 ? 'risk--low' : riskScore < 70 ? 'risk--med' : 'risk--high';
+              // Null until the simulation has actually been scored — `?? 0` here
+              // used to show every unscored draft as a confident "Low (0%)".
+              const riskScore = sim.riskScore ?? sim.riskPercent ?? null;
+              const riskLevel = riskScore === null ? '—' : riskScore < 30 ? 'Low' : riskScore < 70 ? 'Med' : 'High';
+              const riskCls = riskScore === null ? 'risk--none' : riskScore < 30 ? 'risk--low' : riskScore < 70 ? 'risk--med' : 'risk--high';
+              const confidence = sim.confidenceScore ?? null;
 
               return (
                 <div key={sim.id} className="history-table__row">
@@ -200,13 +203,14 @@ export default function HistoryPage() {
                     {meta.label}
                   </span>
                   <span className={`history-table__risk ${riskCls}`}>
-                    {riskLevel} <span className="history-table__risk-pct">({riskScore}%)</span>
+                    {riskLevel}
+                    {riskScore !== null && <span className="history-table__risk-pct">({riskScore}%)</span>}
                   </span>
                   <div className="history-table__conf">
                     <div className="history-table__conf-bar">
-                      <span style={{ width: `${sim.confidenceScore ?? 0}%` }} />
+                      <span style={{ width: `${confidence ?? 0}%` }} />
                     </div>
-                    <span>{sim.confidenceScore ?? 0}%</span>
+                    <span>{confidence === null ? '—' : `${confidence}%`}</span>
                   </div>
                   <span className="history-table__date">
                     {sim.updatedAt ? new Date(sim.updatedAt).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}

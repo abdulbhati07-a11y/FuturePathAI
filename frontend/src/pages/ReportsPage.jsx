@@ -6,6 +6,9 @@ import { useToast }  from '../context/ToastContext';
 import './ReportsPage.css';
 
 function mapReport(sim) {
+  // Both stay null when the simulation carries no score, so an unscored report
+  // reads "—" rather than a confident "Low risk · 0% confidence".
+  const riskScore = sim.riskScore ?? sim.riskPercent ?? null;
   return {
     id:         `rep_${sim.id}`,
     simId:      sim.id,
@@ -13,10 +16,11 @@ function mapReport(sim) {
     date:       sim.updatedAt
       ? new Date(sim.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
       : '—',
-    confidence: sim.confidenceScore ?? 0,
-    risk:       sim.riskLevel || (
-      (sim.riskScore ?? sim.riskPercent ?? 0) < 30 ? 'Low' :
-      (sim.riskScore ?? sim.riskPercent ?? 0) < 70 ? 'Medium' : 'High'
+    confidence: sim.confidenceScore ?? null,
+    risk:       sim.riskLevel ?? (
+      riskScore === null ? null :
+      riskScore < 30 ? 'Low' :
+      riskScore < 70 ? 'Med' : 'High'
     ),
     category: sim.category || '',
   };
@@ -68,8 +72,8 @@ export default function ReportsPage() {
   <h1>${report.title}</h1>
   <p class="meta">FuturePath AI Simulation Report &nbsp;·&nbsp; ${report.date}</p>
   <div class="row">
-    <div class="kv"><div class="label">Confidence Score</div><div class="value">${report.confidence}%</div></div>
-    <div class="kv"><div class="label">Risk Level</div><div class="value">${report.risk}</div></div>
+    <div class="kv"><div class="label">Confidence Score</div><div class="value">${report.confidence === null ? 'Not scored' : `${report.confidence}%`}</div></div>
+    <div class="kv"><div class="label">Risk Level</div><div class="value">${report.risk ?? 'Not assessed'}</div></div>
     <div class="kv"><div class="label">Category</div><div class="value">${report.category || '—'}</div></div>
   </div>
   <p style="color:#555;font-size:14px;">Open the full interactive report in FuturePath AI for complete scenario analysis, path timeline, and AI recommendations.</p>
@@ -144,7 +148,7 @@ export default function ReportsPage() {
                 <p className="report-card__title">{r.title}</p>
                 <p className="report-card__meta">
                   Generated {r.date}
-                  {r.confidence > 0 && <> · Confidence <strong>{r.confidence}%</strong></>}
+                  {r.confidence != null && <> · Confidence <strong>{r.confidence}%</strong></>}
                   {r.risk && <> · Risk <span className={`report-card__risk ${riskCls(r.risk)}`}>{r.risk}</span></>}
                   {r.category && <> · {r.category}</>}
                 </p>

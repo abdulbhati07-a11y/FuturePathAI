@@ -84,6 +84,22 @@
   color: var(--color-warning);
 }
 
+.tag--caution {
+  background: color-mix(in srgb, var(--color-warning) 15%, transparent);
+  color: var(--color-warning);
+}
+
+.tag--risk {
+  background: color-mix(in srgb, var(--color-danger) 15%, transparent);
+  color: var(--color-danger);
+}
+
+/* Finished, but never scored — nothing to claim either way. */
+.tag--neutral {
+  background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+  color: var(--text-secondary);
+}
+
 .sim-card__updated {
   font-size: 11.5px;
   color: var(--text-tertiary);

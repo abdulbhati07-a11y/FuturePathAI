@@ -1,7 +1,17 @@
+/* `min-height: 0` is load-bearing, not tidy-up. This page is a flex item of
+   .app-layout__page, which is itself `overflow-y: auto`. Without this, the
+   default `min-height: auto` floors us at min-content — the page grows to fit
+   the whole thread, the ancestor scrolls instead of .new-sim-page__messages,
+   and the sticky-bottom glue in useStickyScroll silently no-ops (scrollTop on a
+   non-overflowing element does nothing, so it reads as permanently pinned and
+   the jump button never appears). `overflow: hidden` keeps that guarantee even
+   if a future child forgets its own min-height. */
 .new-sim-page {
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .new-sim-page__body {

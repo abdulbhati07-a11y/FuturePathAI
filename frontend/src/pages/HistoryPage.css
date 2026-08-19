@@ -379,10 +379,17 @@
   color: var(--color-danger);
 }
 
+/* Not scored yet — no colour, because there is no risk finding to signal. */
+.risk--none {
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
 .history-table__risk-pct {
   font-weight: 400;
   color: var(--text-secondary);
   font-size: 11px;
+  margin-left: 4px;
 }
 
 .history-table__conf {
