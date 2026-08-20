@@ -32,15 +32,38 @@ const mockResult = {
     salaryDelta: '€119k',
     satisfaction: '4.1/10',
   },
+  // Mirrors the shape the API now returns: a causal claim, the user's own figures
+  // behind it, and — on the risk side — the earliest signal it is arriving.
   rightReasons: [
-    "Berlin's budgeting tech hub status provides high liquidity for your specific skill set if the first job fails.",
-    'Salary increase in real disposable income despite higher nominal taxes due to lower cost of living.',
-    'Strong alignment with your "Long-term Security" value; German labor protections are historically robust.',
+    {
+      point: "Berlin's density of fintech employers means a failed first job costs you weeks, not a relocation.",
+      evidence: 'Your skill set matches the stack listed by most of the hub, so a second search starts warm.',
+    },
+    {
+      point: 'Real disposable income rises even though the nominal tax rate does.',
+      evidence: 'The higher gross more than covers the lower cost of living you described.',
+    },
+    {
+      point: 'German labour protections match the long-term security you ranked first.',
+      evidence: 'You named security as the value you would not trade for pay.',
+    },
   ],
   wrongReasons: [
-    'Significant bureaucracy (up to 16-4 months) for non-EU partner work permit processing.',
-    'Housing market volatility in Mitte/Prenzlauer Berg may exceed current stipend buffers.',
-    'Language barrier in mid-management might limit "soft-influence" project success in year 1.',
+    {
+      point: 'Your partner may be unable to work for most of year one, halving household income exactly while relocation costs land.',
+      evidence: 'Non-EU work permits run four to sixteen months, against the single income you would be on.',
+      watchFor: 'No permit appointment booked by month two',
+    },
+    {
+      point: 'Rent in the districts you shortlisted can outrun the relocation stipend and eat into savings.',
+      evidence: 'Mitte and Prenzlauer Berg sit above the buffer your stipend allows for.',
+      watchFor: 'Three viewings above budget in one week',
+    },
+    {
+      point: 'Working in English at mid-management limits the informal influence your first-year projects depend on.',
+      evidence: 'The projects you described are carried by persuasion rather than formal authority.',
+      watchFor: 'Decisions being made in meetings you are not in',
+    },
   ],
   timeline: [
     { id: 't1', label: 'TODAY', sublabel: 'Decision' },

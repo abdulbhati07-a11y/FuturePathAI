@@ -3,29 +3,80 @@ import { useState, useEffect } from 'react';
 import { toText, toArray, toScore, parseMoney, formatUSD } from './reportContent';
 import './ProsConsPanel.css';
 
+/**
+ * A reason is a causal claim, not a quotation: `point` states the mechanism and
+ * its consequence, `evidence` cites the user's own figures behind it, and
+ * `watchFor` (risk side only) names the earliest signal that the risk is
+ * arriving. Reports written before that shape existed stored plain strings, so
+ * both forms render — a bare string simply becomes a point with no support.
+ */
+
+// Strict field read: the named keys or nothing. toText's last resort is "any
+// string field on the object", which is the right behaviour for the claim — an
+// unrecognised shape still has to show something — and the wrong behaviour for
+// the two supporting lines, where it prints the claim a second time underneath
+// itself. A legacy {title, description} risk had its title echoed as an "Early
+// signal" that way.
+const field = (obj, keys) => {
+  for (const k of keys) {
+    const v = obj[k];
+    if (typeof v === 'string' && v.trim()) return v.trim();
+  }
+  return '';
+};
+
 function ReasonsList({ items, variant }) {
   const Icon = variant === 'right' ? CheckCircle2 : AlertTriangle;
-  const list = toArray(items);
+  const list = toArray(items)
+    .map(item => {
+      // A bare string is the whole reason. Nothing is invented under it.
+      if (typeof item === 'string') return { point: item.trim(), evidence: '', watchFor: '' };
+      if (!item || typeof item !== 'object') return { point: '', evidence: '', watchFor: '' };
+      return {
+        point: toText(item, ['point', 'reason', 'claim', 'title', 'text', 'label']),
+        evidence: field(item, ['evidence', 'description', 'detail', 'support']),
+        watchFor: variant === 'wrong' ? field(item, ['watchFor', 'signal', 'earlyWarning']) : '',
+      };
+    })
+    // A supporting line that only repeats what is already above it is noise.
+    .map(r => ({
+      ...r,
+      evidence: r.evidence === r.point ? '' : r.evidence,
+      watchFor: r.watchFor === r.point || r.watchFor === r.evidence ? '' : r.watchFor,
+    }))
+    .filter(r => r.point || r.evidence);
+
+  // The list used to be padded to three with "Not enough information to assess.",
+  // which read as three findings. Nothing is padded now, so an analysis that
+  // produced nothing has to say so.
+  if (list.length === 0) {
+    return (
+      <p className="reasons-list__empty">
+        {variant === 'right'
+          ? 'No case in favour could be grounded in your answers.'
+          : 'No risk could be grounded in your answers.'}{' '}
+        Add more detail to the interview, then generate the report again.
+      </p>
+    );
+  }
+
   return (
     <ul className={`reasons-list reasons-list--${variant}`}>
-      {list.map((item, i) => {
-        // A reason may be a plain string or an object like { reason, description }.
-        const primary = toText(item, ['reason', 'title', 'text', 'label']);
-        const detail =
-          item && typeof item === 'object' && typeof item.description === 'string'
-            && item.description.trim() && item.description !== primary
-            ? item.description
-            : '';
-        return (
-          <li key={i}>
-            <Icon size={15} strokeWidth={2} />
-            <span className="reasons-list__text">
-              <span>{primary || detail}</span>
-              {primary && detail && <span className="reasons-list__detail">{detail}</span>}
-            </span>
-          </li>
-        );
-      })}
+      {list.map((r, i) => (
+        <li key={i}>
+          <Icon size={15} strokeWidth={2} />
+          <span className="reasons-list__text">
+            <span className="reasons-list__point">{r.point || r.evidence}</span>
+            {r.point && r.evidence && <span className="reasons-list__detail">{r.evidence}</span>}
+            {r.watchFor && (
+              <span className="reasons-list__watch">
+                <span className="reasons-list__watch-label">Early signal</span>
+                {r.watchFor}
+              </span>
+            )}
+          </span>
+        </li>
+      ))}
     </ul>
   );
 }

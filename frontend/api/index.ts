@@ -226,7 +226,97 @@ function validateScenario(s: any, label: string, fallbackTitle: string) {
   };
 }
 
-function validateReport(raw: any) {
+// ── Reasons ───────────────────────────────────────────────────────────────────
+// "Why this could be right / go wrong" is the most-read part of a report, so a
+// reason has to be a causal claim — a mechanism and the consequence it produces —
+// and not a sentence lifted out of the interview. The prompt in /reports/generate
+// now says that explicitly; the helpers below are the enforcement, because a model
+// told to cite the user's own numbers will otherwise hand their sentences straight
+// back and present that as analysis.
+
+// Comparison form: case-folded, punctuation-stripped, single-spaced. $ and % are
+// kept because they carry meaning ("38%" is not "38").
+const canon = (v: any) =>
+  String(v ?? '').toLowerCase().replace(/[^a-z0-9$%]+/g, ' ').replace(/\s+/g, ' ').trim();
+
+// The exact filler the old padding wrote three times into every thin report.
+// Stored reports still carry it, so it is recognised and dropped on read.
+const REASON_FILLER = canon('Not enough information to assess.');
+
+// Every sentence the USER said, in comparison form, deduplicated — a legacy flat
+// answers map is exposed as both a transcript and a qa map, so the same sentence
+// arrives twice. Fragments under four words ("yes", "about $28k") are dropped:
+// they are too small to tell a restatement apart from a reason that happens to
+// share a couple of words.
+function userSentences(answers: any): string[] {
+  const { transcript, qa } = normalizeAnswers(answers);
+  return [...new Set(
+    [
+      ...transcript.filter(t => t.role === 'user').map(t => t.content),
+      ...Object.values(qa),
+    ]
+      .flatMap(s => String(s ?? '').split(/[.!?\n]+/))
+      .map(canon)
+      .filter(s => s.split(' ').length >= 4),
+  )];
+}
+
+// True when `point` is one of those sentences returned rather than reasoned from.
+// Two tests, because a model quotes in two ways: it hands back a fragment of a
+// sentence, or it hands back the whole sentence with a few words of framing.
+function restatesUser(point: string, sentences: string[]): boolean {
+  const p = canon(point);
+  const pw = p.split(' ').filter(Boolean);
+  if (pw.length < 4) return false;
+  const pset = new Set(pw);
+  for (const s of sentences) {
+    // A fragment of something the user said — a quote with the end trimmed off.
+    if (s.includes(p)) return true;
+    const sset = new Set(s.split(' '));
+    let shared = 0;
+    for (const w of sset) if (pset.has(w)) shared++;
+    // Nearly all of the user's sentence reappears AND the item is not
+    // substantially longer than it, so the item *is* that sentence rather than a
+    // claim built on it. The length ratio is what matters: it rejects the bare
+    // quote while letting "you want to decide within 3 months, which means
+    // <consequence>" through, because that one does add the consequence. A
+    // symmetric word-overlap ratio cannot draw that line — it sat at 0.69 for a
+    // verbatim quote with six words of framing around it.
+    if (shared / sset.size >= 0.8 && pw.length <= sset.size * 1.6) return true;
+  }
+  return false;
+}
+
+// One reason in the stored shape: {point, evidence} plus watchFor on the risk
+// side. Three vintages have to survive this: plain strings (every report written
+// before today), {title, description} objects from before the schema was pinned,
+// and the current shape.
+function normalizeReason(x: any, side: 'right' | 'wrong') {
+  const point = typeof x === 'string'
+    ? x.trim()
+    : str(x?.point ?? x?.reason ?? x?.claim ?? x?.title ?? x?.label ?? x?.text);
+  if (!point) return null;
+  const item: { point: string; evidence?: string; watchFor?: string } = { point };
+  const evidence = typeof x === 'string' ? '' : str(x?.evidence ?? x?.description ?? x?.detail ?? x?.support);
+  if (evidence && canon(evidence) !== canon(point)) item.evidence = evidence;
+  if (side === 'wrong') {
+    const watchFor = typeof x === 'string' ? '' : str(x?.watchFor ?? x?.signal ?? x?.earlyWarning);
+    if (watchFor && canon(watchFor) !== canon(point) && canon(watchFor) !== canon(evidence)) item.watchFor = watchFor;
+  }
+  return item;
+}
+
+// Read path. Nothing is filtered for quality here — a stored report cannot be
+// re-reasoned without regenerating it — but the shape is made uniform so the UI
+// has one thing to render, and the padding filler is dropped so a report that
+// produced no reasons shows an empty state instead of three non-statements.
+const reasonsOut = (v: any, side: 'right' | 'wrong') =>
+  (Array.isArray(v) ? v : [])
+    .map((x: any) => normalizeReason(x, side))
+    .filter((r): r is { point: string; evidence?: string; watchFor?: string } => !!r && canon(r.point) !== REASON_FILLER)
+    .slice(0, 4);
+
+function validateReport(raw: any, answers?: any) {
   const d = raw && typeof raw === 'object' ? raw : {};
   let best   = validateScenario(d.bestCase,   'BEST CASE',   'Optimistic');
   let likely = validateScenario(d.mostLikely, 'MOST LIKELY', 'Expected');
@@ -257,18 +347,29 @@ function validateReport(raw: any) {
     // and calcScores already declines to score it rather than guessing.
   }
 
-  const reasons = (v: any, pad: string) => {
-    const list = (Array.isArray(v) ? v : [])
-      .map((x: any) => (typeof x === 'string' ? x.trim() : str(x?.title ?? x?.label ?? x?.text)))
-      .filter(Boolean).slice(0, 3);
-    while (list.length < 3) list.push(pad);
-    return list;
+  // Generation path. Padding to three with a repeated "Not enough information to
+  // assess." made an empty analysis look like three findings, so nothing is padded
+  // any more: two grounded reasons, or none, is the honest answer and the UI
+  // renders it as one. Anything that merely restates the interview is dropped
+  // here rather than shown as reasoning.
+  const sentences = userSentences(answers);
+  const reasons = (v: any, side: 'right' | 'wrong') => {
+    const out: { point: string; evidence?: string; watchFor?: string }[] = [];
+    for (const x of Array.isArray(v) ? v : []) {
+      const item = normalizeReason(x, side);
+      if (!item || canon(item.point) === REASON_FILLER) continue;
+      if (restatesUser(item.point, sentences)) continue;
+      if (out.some(o => canon(o.point) === canon(item.point))) continue;
+      out.push(item);
+      if (out.length >= 3) break;
+    }
+    return out;
   };
 
   return {
     bestCase: best, mostLikely: likely, worstCase: worst,
-    rightReasons: reasons(d.rightReasons, 'Not enough information to assess.'),
-    wrongReasons: reasons(d.wrongReasons, 'Not enough information to assess.'),
+    rightReasons: reasons(d.rightReasons, 'right'),
+    wrongReasons: reasons(d.wrongReasons, 'wrong'),
     timeline: (Array.isArray(d.timeline) ? d.timeline : []).slice(0, 8).map((t: any, i: number) => ({
       id: str(t?.id, `t${i + 1}`), label: str(t?.label, `STEP ${i + 1}`), sublabel: str(t?.sublabel, ''),
     })),
@@ -835,7 +936,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         riskScore: risk, decisionScore: dec, verdict,
         confidence: conf,
         bestCase: recs.bestCase, mostLikely: recs.mostLikely, worstCase: recs.worstCase,
-        rightReasons: recs.rightReasons ?? [], wrongReasons: recs.wrongReasons ?? [],
+        rightReasons: reasonsOut(recs.rightReasons, 'right'), wrongReasons: reasonsOut(recs.wrongReasons, 'wrong'),
         timeline: tl, alternatives: recs.alternatives ?? [],
       });
     }
@@ -1038,14 +1139,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .map(t => `${t.role === 'assistant' ? 'ADVISOR' : 'USER'}: ${t.content}`)
         .join('\n');
 
-      const REPORT_SYSTEM = `You are FuturePath AI's report engine. You are given the full transcript of a decision-simulation interview. Ground every field of your output in what the USER actually said — quote their specifics (numbers, roles, cities, constraints, timelines) rather than generic advice. If the transcript does not support a claim, say so plainly instead of inventing detail.
+      const REPORT_SYSTEM = `You are FuturePath AI's report engine. You are given the full transcript of a decision-simulation interview. Ground every field of your output in what the USER actually said — reason from their specifics (numbers, roles, cities, constraints, timelines) rather than giving generic advice. If the transcript does not support a claim, say so plainly instead of inventing detail.
 
 Hard rules:
 - bestCase/mostLikely/worstCase probabilities are percentages that MUST sum to exactly 100.
 - salaryDelta is an annual change in USD relative to today, signed: "+$18k" for a gain, "-$12k" for a cut, "$0" for no change. Never drop a minus sign.
 - satisfaction is "N/10" with N an integer 1-10.
 - Be realistic, not optimistic: a genuinely risky decision must show a worstCase probability that reflects it.
-- Return ONLY raw JSON. No prose, no markdown fences.`;
+- Return ONLY raw JSON. No prose, no markdown fences.
+
+rightReasons and wrongReasons are the two most-read sections of the report, so they must contain REASONING, not quotation:
+- Each item is a causal claim: a mechanism drawn from the transcript, plus the consequence it produces for this user. "The job pays $96k" is a fact, NOT a reason. "Replacing $96k of salary means the store has to roughly triple last year's $15.6k profit, and nothing you described shows that growth rate" IS a reason.
+- Never restate, quote or lightly reword a sentence the user said. If an item could be found in the transcript, it is not a reason: replace it or drop it.
+- "point" — the claim in one sentence, addressed to the user as "you", naming the consequence.
+- "evidence" — the user's own figures or constraints that make the claim hold, in one short sentence. Never repeat "point".
+- rightReasons — mechanisms that make this decision WORK: the runway, margin, demand, skills, timing or optionality the user actually described.
+- wrongReasons — mechanisms that make it FAIL. Constraints, dependencies, deadlines and any exit criteria the user stated belong on THIS side: an exit criterion is a risk the user has already named, never a point in favour.
+- "watchFor" (wrongReasons only) — the earliest observable signal that this specific risk is materialising, in a few words.
+- 2-3 items per side. Drop any item you cannot ground in the transcript instead of padding the list.`;
 
       let aiData: any;
       const r = await aiChat([
@@ -1055,7 +1166,7 @@ Hard rules:
 FULL INTERVIEW TRANSCRIPT:
 ${transcriptText}
 
-Return ONLY raw JSON with EXACTLY these keys and shapes: bestCase/mostLikely/worstCase are objects {label,probability(number),title(string),description(string),salaryDelta(string),satisfaction(string)}; rightReasons and wrongReasons are arrays of 3 plain strings (NOT objects) drawn from the transcript; timeline is an array of {id,label,sublabel} (all strings); alternatives is an array of {id,title,subtitle,score(number 0-100)}.` },
+Return ONLY raw JSON with EXACTLY these keys and shapes: bestCase/mostLikely/worstCase are objects {label,probability(number),title(string),description(string),salaryDelta(string),satisfaction(string)}; rightReasons is an array of 2-3 objects {point,evidence} and wrongReasons is an array of 2-3 objects {point,evidence,watchFor} (all strings), both following the reasoning rules above; timeline is an array of {id,label,sublabel} (all strings); alternatives is an array of {id,title,subtitle,score(number 0-100)}.` },
       ]);
       try {
         const d = await r.json();
@@ -1066,8 +1177,11 @@ Return ONLY raw JSON with EXACTLY these keys and shapes: bestCase/mostLikely/wor
         return err(res, 'The AI could not produce a valid report from this conversation. Please try again.', 503);
       }
 
-      // Bound and normalize every number before it is stored or shown.
-      aiData = validateReport(aiData);
+      // Bound and normalize every number before it is stored or shown. The
+      // transcript goes in too: reasons are checked against what the user actually
+      // said, so a "reason" that is really their own sentence is dropped instead
+      // of stored (see restatesUser).
+      aiData = validateReport(aiData, sim.answers);
       const scores = calcScores(sim.answers, aiData);
       await prisma.report.upsert({ where:{simulationId:simId}, create:{id:uuid(),simulationId:simId,userId:u.sub,summary:aiData.mostLikely?.description||'Report',chartData:'[]',timeline:JSON.stringify(aiData.timeline||[]),scores:JSON.stringify(scores),recommendations:JSON.stringify(aiData)}, update:{summary:aiData.mostLikely?.description||'Report',timeline:JSON.stringify(aiData.timeline||[]),scores:JSON.stringify(scores),recommendations:JSON.stringify(aiData)} });
       // Same rule as /analyze: nulls mean "not scoreable", not "score of zero",
