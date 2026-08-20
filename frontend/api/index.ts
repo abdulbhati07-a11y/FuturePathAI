@@ -226,6 +226,28 @@ function validateScenario(s: any, label: string, fallbackTitle: string) {
   };
 }
 
+// A best case and a worst case carrying the SAME salary figure are not a range —
+// they are one number printed twice. Observed live: a worst case titled "Job loss
+// and personal strain" reporting the same +$79k gain as the best case, because the
+// model wrote its single salary figure into all three scenarios. The existing
+// ordering guard cannot see it, since equal values are not inverted.
+//
+// The edit is subtractive on purpose. Inventing a spread would fabricate a
+// projection the user never received, and moving the figure between scenarios
+// would attribute it somewhere the model didn't. So the two extremes lose a claim
+// neither of them supports, and an unqualified single figure survives only where
+// the model itself put it — on the expected outcome, the one slot where a number
+// that does not vary by scenario still means something.
+//
+// $0 on both extremes is left alone: zero is the neutral point of the scale, not a
+// claimed gain, so "no salary impact in either direction" is a real finding for a
+// decision that isn't about money — and most of them aren't.
+function withRealSpread<T extends { salaryDelta?: any }>(best: T, worst: T): [T, T] {
+  const bd = parseMoney(best?.salaryDelta), wd = parseMoney(worst?.salaryDelta);
+  if (bd === null || wd === null || bd !== wd || bd === 0) return [best, worst];
+  return [{ ...best, salaryDelta: 'N/A' }, { ...worst, salaryDelta: 'N/A' }];
+}
+
 // ── Reasons ───────────────────────────────────────────────────────────────────
 // "Why this could be right / go wrong" is the most-read part of a report, so a
 // reason has to be a causal claim — a mechanism and the consequence it produces —
@@ -329,6 +351,9 @@ function validateReport(raw: any, answers?: any) {
   if (bd !== null && wd !== null && bd < wd) {
     const t = best; best = { ...worst, label: 'BEST CASE' }; worst = { ...t, label: 'WORST CASE' };
   }
+  // Runs after the swap, so an inverted-and-equal pair is judged on its final
+  // positions rather than on the order the model happened to emit.
+  [best, worst] = withRealSpread(best, worst);
 
   // The three scenarios are exhaustive, so their probabilities must sum to 100 —
   // but that premise only holds when the model actually forecast all three. With
@@ -411,8 +436,13 @@ function calcScores(answers: any, report?: any): { riskScore: number | null; con
   // the two things the model actually projected about the outcome. Weights are
   // renormalized over only the scenarios that carry a figure.
   const sat1 = (s: any) => parseMoney(String(s?.satisfaction ?? '').split('/')[0]);
+  // Score the same figures the user is shown. The results route drops a degenerate
+  // spread on read, so scoring the raw stored pair would price an old report on a
+  // downside gain the page no longer displays — and re-analyzing it would then
+  // write that disagreement into the scores column.
+  const [bcase, wcase] = withRealSpread(report.bestCase, report.worstCase);
   let satAcc = 0, satW = 0, evAcc = 0, evW = 0;
-  for (const [prob, s] of [[pb, report.bestCase], [pl, report.mostLikely], [pw, report.worstCase]] as [number, any][]) {
+  for (const [prob, s] of [[pb, bcase], [pl, report.mostLikely], [pw, wcase]] as [number, any][]) {
     const sat = sat1(s);
     if (sat !== null) { satAcc += prob * clamp(sat, 1, 10); satW += prob; }
     const d = parseMoney(s?.salaryDelta);
@@ -911,6 +941,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       let stored: any = {};
       if (report) { try { stored = typeof report.scores === 'string' ? JSON.parse(report.scores) : (report.scores ?? {}); } catch { stored = {}; } }
 
+      // Applied on read as well as at generation. Unlike a quoted reason — which
+      // cannot be re-reasoned without regenerating the report — a degenerate
+      // spread is a pure function of two stored numbers, so the reports already in
+      // the database can be corrected as they are served instead of going on
+      // showing a downside that gains as much as the upside.
+      const [bestOut, worstOut] = withRealSpread(recs.bestCase, recs.worstCase);
+
       // Every field below is either stored data or derived from it. Nothing is
       // invented: no report means no verdict, no confidence and no date, so the
       // UI can render an honest empty state instead of a confident-looking one.
@@ -935,7 +972,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         riskLabel: risk === null ? 'Not assessed' : `Risk score ${risk}/100`,
         riskScore: risk, decisionScore: dec, verdict,
         confidence: conf,
-        bestCase: recs.bestCase, mostLikely: recs.mostLikely, worstCase: recs.worstCase,
+        bestCase: bestOut, mostLikely: recs.mostLikely, worstCase: worstOut,
         rightReasons: reasonsOut(recs.rightReasons, 'right'), wrongReasons: reasonsOut(recs.wrongReasons, 'wrong'),
         timeline: tl, alternatives: recs.alternatives ?? [],
       });
@@ -1144,6 +1181,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 Hard rules:
 - bestCase/mostLikely/worstCase probabilities are percentages that MUST sum to exactly 100.
 - salaryDelta is an annual change in USD relative to today, signed: "+$18k" for a gain, "-$12k" for a cut, "$0" for no change. Never drop a minus sign.
+- The three salaryDelta figures are a range, so the best case and the worst case CANNOT carry the same number. Do not write one figure into all three scenarios. If the pay itself is fixed by contract, the scenarios still differ in what happens to it — being let go, leaving early, taking a cut, never starting — and each figure must reflect that outcome. A downside that earns as much as the upside is not a downside, and a repeated figure will be dropped rather than shown.
 - satisfaction is "N/10" with N an integer 1-10.
 - Be realistic, not optimistic: a genuinely risky decision must show a worstCase probability that reflects it.
 - Return ONLY raw JSON. No prose, no markdown fences.
