@@ -5,7 +5,6 @@ import {
   RadialBarChart, RadialBar,
   ResponsiveContainer,
   Tooltip,
-  XAxis, YAxis,
 } from 'recharts';
 import { cssVar } from '../utils/cssVar';
 import './StatsGrid.css';
@@ -21,10 +20,21 @@ function MicroTooltip({ active, payload, formatter }) {
   );
 }
 
-/* ── 1. Area sparkline (Projected Capital) ────────────────────────────────── */
+/* Each sparkline used to fall back to a hardcoded curve — [40, 55, 45, 65, 58,
+   75, 70, 85] — whenever it was handed fewer than two points, so a card with no
+   history still drew a confident rising line. There is no substitute for the
+   data, so an empty series now draws nothing and the card says how many readings
+   it has. */
+function toPoints(data) {
+  return (Array.isArray(data) ? data : [])
+    .filter(v => Number.isFinite(Number(v)))
+    .map((v, i) => ({ i, v: Number(v) }));
+}
+
+/* ── 1. Area sparkline (average decision score over time) ─────────────────── */
 function AreaSparkline({ data, color }) {
-  const points = (data?.length >= 2 ? data : [40, 55, 45, 65, 58, 75, 70, 85])
-    .map((v, i) => ({ i, v }));
+  const points = toPoints(data);
+  if (points.length === 0) return null;
 
   return (
     <ResponsiveContainer width="100%" height={44}>
@@ -36,7 +46,7 @@ function AreaSparkline({ data, color }) {
           </linearGradient>
         </defs>
         <Tooltip
-          content={<MicroTooltip formatter={v => v?.toFixed(1)} />}
+          content={<MicroTooltip formatter={v => `${v}%`} />}
           cursor={{ stroke: color, strokeWidth: 1, strokeDasharray: '3 3' }}
         />
         <Area
@@ -45,7 +55,7 @@ function AreaSparkline({ data, color }) {
           stroke={color}
           strokeWidth={2}
           fill={`url(#area-grad-${color})`}
-          dot={false}
+          dot={points.length === 1 ? { r: 3, fill: color } : false}
           animationDuration={900}
           animationEasing="ease-out"
           isAnimationActive
@@ -55,17 +65,16 @@ function AreaSparkline({ data, color }) {
   );
 }
 
-/* ── 2. Bar sparkline (Stability Index) ───────────────────────────────────── */
+/* ── 2. Bar sparkline (confidence per analysed path) ──────────────────────── */
 function BarSparkline({ data, color }) {
-  const points = (data?.length >= 2 ? data : [40, 65, 45, 80, 55, 90])
-    .slice(-6)
-    .map((v, i) => ({ i, v }));
+  const points = toPoints(data).slice(-6);
+  if (points.length === 0) return null;
 
   return (
     <ResponsiveContainer width="100%" height={44}>
       <BarChart data={points} margin={{ top: 2, right: 0, left: 0, bottom: 0 }} barCategoryGap="20%">
         <Tooltip
-          content={<MicroTooltip formatter={v => `${v?.toFixed(1)}%`} />}
+          content={<MicroTooltip formatter={v => `${v}%`} />}
           cursor={{ fill: cssVar('--border-subtle') }}
         />
         <Bar
@@ -82,7 +91,7 @@ function BarSparkline({ data, color }) {
   );
 }
 
-/* ── 3. Radial bar (Path Alpha) ───────────────────────────────────────────── */
+/* ── 3. Radial bar (strongest path's decision score) ──────────────────────── */
 function RadialSparkline({ percent, color }) {
   const data = [{ v: Math.min(Math.max(percent, 0), 100), fill: color }];
   return (
@@ -123,16 +132,41 @@ function RiskGauge({ value, label }) {
           style={{ width: `${pct}%`, background: col }}
         />
       </div>
-      <span className="stat-card__risk-label" style={{ color: col }}>{label}</span>
+      {label && <span className="stat-card__risk-label" style={{ color: col }}>{label}</span>}
     </div>
   );
 }
 
-/* ── Trend icon ───────────────────────────────────────────────────────────── */
-function TrendIcon({ trend }) {
-  if (trend === 'up')   return <ArrowUp   size={12} className="stat-card__trend stat-card__trend--up"   />;
-  if (trend === 'down') return <ArrowDown size={12} className="stat-card__trend stat-card__trend--down" />;
-  return                       <Activity  size={12} className="stat-card__trend stat-card__trend--stable" />;
+/* ── Trend icon ───────────────────────────────────────────────────────────────
+   The arrow says which way the number moved; the colour says whether that is
+   good news. They used to be one field, so a rising risk score — the arrow the
+   user most needs to notice — was painted the same green as rising confidence. */
+function TrendIcon({ trend, sentiment = 'neutral' }) {
+  const Icon = trend === 'up' ? ArrowUp : trend === 'down' ? ArrowDown : Activity;
+  const tone = sentiment === 'good' ? 'good' : sentiment === 'bad' ? 'bad' : 'neutral';
+  const words = trend === 'stable'
+    ? 'holding steady across your analysed paths'
+    : `trending ${trend} across your analysed paths`;
+  return (
+    <Icon
+      size={12}
+      className={`stat-card__trend stat-card__trend--${tone}`}
+      aria-label={words}
+    />
+  );
+}
+
+/* How many readings the average was taken over — printed on every card, because
+   an average over two paths and an average over twenty are different claims.
+   These lines used to read "Market Volatility Analysis", "Risk Assessment
+   Model", "Portfolio Projection" and "Decision Engine Output": they named an
+   authority for figures that came from Math.random(). */
+function sampleNote({ scored, total }) {
+  if (!Number.isFinite(scored) || scored <= 0) return 'Not analysed yet';
+  const paths = `${scored} analysed ${scored === 1 ? 'path' : 'paths'}`;
+  return Number.isFinite(total) && total > scored
+    ? `${paths} of ${total} simulations`
+    : paths;
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
@@ -141,85 +175,81 @@ function TrendIcon({ trend }) {
 export default function StatsGrid({ stats, exclude = [] }) {
   if (!stats) return null;
 
-  // Default each metric to an empty object so a partial payload can't throw on
-  // property access; cards whose data is missing are filtered out of the render below.
-  const {
-    stabilityIndex = {}, riskVector = {}, projectedCapital = {}, pathAlpha = {},
-  } = stats;
+  // Each metric is null until the user has at least one scored report, and a
+  // null card is dropped from the render below rather than shown as a zero.
+  const { confidence, risk, decision, strongest } = stats;
 
   // Resolve theme colours at render time so charts match the active theme
   const primary = cssVar('--color-primary');
   const success = cssVar('--color-success', '#34D399');
 
   // Data-driven card list so consumers can hide specific metrics via `exclude`.
-  // The dashboard hides `pathAlpha` because the SpotlightHero owns that figure.
+  // The dashboard hides `strongest` because the SpotlightHero owns that figure.
   const cards = [
     {
-      key: 'stabilityIndex',
+      key: 'confidence',
       render: () => (
-        <div className="stat-card stat-card--live" key="stabilityIndex">
-          <span className="stat-card__live-dot" aria-hidden="true" />
+        <div className="stat-card" key="confidence">
           <div className="stat-card__head">
-            <span className="stat-card__label">STABILITY INDEX</span>
-            <TrendIcon trend={stabilityIndex.trend} />
+            <span className="stat-card__label">Avg. confidence</span>
+            <TrendIcon trend={confidence.trend} sentiment={confidence.sentiment} />
           </div>
-          <BarSparkline data={stabilityIndex.history} color={primary} />
-          <p className="stat-card__value">{stabilityIndex.value}%</p>
-          <span className="stat-card__source">Market Volatility Analysis</span>
+          <BarSparkline data={confidence.history} color={primary} />
+          <p className="stat-card__value">{confidence.value}%</p>
+          <span className="stat-card__source">{sampleNote(confidence)}</span>
         </div>
       ),
     },
     {
-      key: 'riskVector',
+      key: 'risk',
       render: () => (
-        <div className="stat-card stat-card--live" key="riskVector">
-          <span className="stat-card__live-dot" aria-hidden="true" />
+        <div className="stat-card" key="risk">
           <div className="stat-card__head">
-            <span className="stat-card__label">RISK VECTOR</span>
-            <TrendIcon trend={riskVector.trend} />
+            <span className="stat-card__label">Avg. risk</span>
+            <TrendIcon trend={risk.trend} sentiment={risk.sentiment} />
           </div>
-          <RiskGauge value={riskVector.value} label={riskVector.label} />
-          <p className="stat-card__value">{riskVector.value} <span className="stat-card__unit">pts</span></p>
-          <span className="stat-card__source">Risk Assessment Model</span>
+          <RiskGauge value={risk.value} label={risk.label} />
+          <p className="stat-card__value">{risk.value} <span className="stat-card__unit">/ 100</span></p>
+          <span className="stat-card__source">{sampleNote(risk)}</span>
         </div>
       ),
     },
     {
-      key: 'projectedCapital',
+      key: 'decision',
       render: () => (
-        <div className="stat-card stat-card--live" key="projectedCapital">
-          <span className="stat-card__live-dot" aria-hidden="true" />
+        <div className="stat-card" key="decision">
           <div className="stat-card__head">
-            <span className="stat-card__label">PROJ. CAPITAL</span>
-            <TrendIcon trend={projectedCapital?.trend} />
+            <span className="stat-card__label">Avg. decision score</span>
+            <TrendIcon trend={decision.trend} sentiment={decision.sentiment} />
           </div>
-          <AreaSparkline data={projectedCapital.history} color={success} />
-          <p className="stat-card__value">${projectedCapital.value}M</p>
-          <span className="stat-card__source">Portfolio Projection</span>
+          <AreaSparkline data={decision.history} color={success} />
+          <p className="stat-card__value">{decision.value}%</p>
+          <span className="stat-card__source">{sampleNote(decision)}</span>
         </div>
       ),
     },
     {
-      key: 'pathAlpha',
+      key: 'strongest',
       render: () => (
-        <div className="stat-card stat-card--live" key="pathAlpha">
-          <span className="stat-card__live-dot" aria-hidden="true" />
+        <div className="stat-card" key="strongest">
           <div className="stat-card__head">
-            <span className="stat-card__label">PATH ALPHA</span>
-            <TrendIcon trend={pathAlpha.trend} />
+            <span className="stat-card__label">Strongest path</span>
           </div>
-          <RadialSparkline percent={pathAlpha.value} color={primary} />
+          <RadialSparkline percent={strongest.value} color={primary} />
           <p className="stat-card__value">
-            {pathAlpha.label}{' '}
-            <span className="stat-card__value-sub">+{pathAlpha.value}%</span>
+            {strongest.grade ?? '—'}{' '}
+            <span className="stat-card__value-sub">{strongest.value}%</span>
           </p>
-          <span className="stat-card__source">Decision Engine Output</span>
+          <span className="stat-card__source">{strongest.title}</span>
         </div>
       ),
     },
   ];
 
   const visible = cards.filter(c => !exclude.includes(c.key) && stats[c.key]);
+  // Nothing scored yet means every metric is null, and an empty grid would still
+  // occupy its bottom margin. The page shows its own notice in that case.
+  if (visible.length === 0) return null;
 
   return (
     <div className="stats-grid" data-count={visible.length}>

@@ -1,54 +1,31 @@
 import { apiClient } from './client';
-import { realTimeSimulation } from '../services/realTimeSimulation';
 
-const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true';
-const USE_REALTIME = import.meta.env.VITE_USE_REALTIME !== 'false';
-
-// Live dashboard metrics (stability, risk, capital, market correlations) are
-// generated client-side by realTimeSimulation for a premium "live" feel. Only the
-// Recent Simulations list is real data, pulled from the serverless backend.
-const mockStats = {
-  stabilityIndex: { value: 84.2, unit: '%', trend: 'up' },
-  riskVector:     { value: 12.5, unit: 'pts', label: 'Low', trend: 'down' },
-  projectedCapital: { value: 1.4, unit: 'M', prefix: '$' },
-  pathAlpha:      { value: 26, label: 'A/B', trend: 'up' },
-};
-const mockSimulations = [];
-const mockAdvisor = { status: 'Current Analysis Active', message: 'No insights.', checklist: [] };
-const mockMarketCorrelation = [];
-const mockMeta = { simulationUptime: 99.98, lastRecalc: '82:45m ago' };
-
-export async function getDashboardStats() {
-  if (USE_MOCKS) return mockStats;
-  if (USE_REALTIME) {
-    try { return realTimeSimulation.getCurrentData().stats; }
-    catch { return mockStats; }
-  }
-  return mockStats;
+/**
+ * Dashboard data. Both calls hit the real backend now.
+ *
+ * This file used to be the seam where the dashboard stopped being real. Only
+ * getRecentSimulations() fetched anything; the other four exports returned
+ * `realTimeSimulation.getCurrentData()`, a browser-side generator that made up
+ * every headline figure from Math.random() and re-made it up every two seconds:
+ *
+ *   stabilityIndex: 84.2%   "Market Volatility Analysis"
+ *   projectedCapital: $1.4M "Portfolio Projection"
+ *   pathAlpha: +26%         "Decision Engine Output"
+ *   plus S&P 500 / NASDAQ / VIX / interest-rate moves, a randomly chosen "AI
+ *   Advisor" insight, a checklist whose ticks were re-rolled every tick, and a
+ *   99.95% "simulation uptime".
+ *
+ * The switch that fed them, VITE_USE_REALTIME, defaulted to ON (`!== 'false'`),
+ * so the invented numbers were what production shipped. The service and its
+ * mock fallbacks are gone; the figures now come from /dashboard/summary, which
+ * aggregates the signed-in user's own simulations and reports.
+ */
+export async function getDashboardSummary() {
+  return apiClient.get('/dashboard/summary');
 }
 
 export async function getRecentSimulations() {
-  if (USE_MOCKS) return mockSimulations;
-
   // Backend returns { data: [...mapped sims], meta } already shaped for the UI.
   const raw = await apiClient.get('/simulations?limit=5');
   return Array.isArray(raw) ? raw : (raw?.data ?? []);
-}
-
-export async function getAdvisorInsight() {
-  if (USE_MOCKS) return mockAdvisor;
-  if (USE_REALTIME) return realTimeSimulation.getCurrentData().advisor;
-  return mockAdvisor;
-}
-
-export async function getMarketCorrelation() {
-  if (USE_MOCKS) return mockMarketCorrelation;
-  if (USE_REALTIME) return realTimeSimulation.getCurrentData().correlations;
-  return mockMarketCorrelation;
-}
-
-export async function getSystemMeta() {
-  if (USE_MOCKS) return mockMeta;
-  if (USE_REALTIME) return realTimeSimulation.getCurrentData().meta;
-  return mockMeta;
 }

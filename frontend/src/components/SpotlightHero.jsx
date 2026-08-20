@@ -1,85 +1,87 @@
 import { useMemo } from 'react';
 import { AreaChart, Area, ResponsiveContainer, YAxis, Tooltip } from 'recharts';
-import { ArrowUp, ArrowDown, Activity, Sparkles, ArrowRight } from 'lucide-react';
+import { Sparkles, ArrowRight } from 'lucide-react';
 import { cssVar } from '../utils/cssVar';
 import './SpotlightHero.css';
 
-function TrendPill({ trend, value }) {
-  const up = trend === 'up';
-  const down = trend === 'down';
-  const Icon = up ? ArrowUp : down ? ArrowDown : Activity;
-  const cls = up ? 'spotlight__trend--up' : down ? 'spotlight__trend--down' : 'spotlight__trend--flat';
-  return (
-    <span className={`spotlight__trend ${cls}`}>
-      <Icon size={12} strokeWidth={2.5} />
-      {value != null && <span>{up ? '+' : ''}{value}%</span>}
-    </span>
-  );
-}
-
 function HeroTooltip({ active, payload }) {
   if (!active || !payload?.length) return null;
-  return <div className="spotlight__tooltip">{Number(payload[0].value).toFixed(1)}</div>;
+  return <div className="spotlight__tooltip">{Number(payload[0].value)}%</div>;
 }
 
 /**
  * SpotlightHero — the editorial "headline metric" band.
  *
- * Features Path Alpha (the Decision Engine output) as the focal figure with a
- * large area chart drawn from the projected-capital / stability trajectory,
- * plus three inline supporting KPIs and the advisor's latest takeaway.
+ * Features the user's strongest analysed path: the highest decision score across
+ * the reports they have generated, with its letter grade, the simulation it came
+ * from, and the decision scores of their other paths drawn behind it.
  *
- * Reuses the existing dashboard `stats` + `advisor` data — no new API calls.
+ * What it used to feature was "Path Alpha — projected edge over baseline",
+ * +26%, under a "Decision Engine Output" badge with a pulsing live dot. There
+ * was no path alpha, no baseline and no edge: the figure was
+ * `Math.floor(20 + Math.random() * 30)`, redrawn every two seconds, and the
+ * chart behind it was a hardcoded curve that ran [38, 46, 43, 55, …] whenever no
+ * history was supplied — which was always, because none existed. The takeaway
+ * line beneath it came from a list of five canned sentences chosen at random.
+ *
+ * Every figure here is now the user's own, and the band only renders when there
+ * is a scored path to feature (see DashboardPage).
  */
 export default function SpotlightHero({ stats, advisor, onDeepDive }) {
-  const pathAlpha = stats?.pathAlpha ?? {};
-  const capital   = stats?.projectedCapital ?? {};
-  const stability = stats?.stabilityIndex ?? {};
+  const strongest = stats?.strongest;
+  const decision = stats?.decision;
 
   const primary = cssVar('--color-primary');
 
-  const series = useMemo(() => {
-    const src =
-      capital.history?.length >= 2 ? capital.history
-      : stability.history?.length >= 2 ? stability.history
-      : [38, 46, 43, 55, 52, 64, 61, 74, 80, 78, 90, 96];
-    return src.map((v, i) => ({ i, v: Number(v) }));
-  }, [capital.history, stability.history]);
+  // The real series or none at all. A single scored path gets a dot rather than
+  // a trajectory, because one reading is not a trend.
+  const series = useMemo(
+    () => (Array.isArray(decision?.history) ? decision.history : [])
+      .filter(v => Number.isFinite(Number(v)))
+      .map((v, i) => ({ i, v: Number(v) })),
+    [decision?.history],
+  );
 
-  // Latest advisor line, trimmed to a single punchy takeaway
-  const takeaway = advisor?.message
-    ? advisor.message.split('. ')[0].replace(/\.$/, '') + '.'
-    : 'Your responses are shaping the probability model in real time.';
+  if (!strongest) return null;
+
+  // The advisor summary's opening sentence — itself derived from these same rows.
+  const takeaway = advisor?.message ? advisor.message.split('. ')[0].replace(/\.$/, '') + '.' : null;
+
+  const sample = strongest.total > strongest.scored
+    ? `${strongest.scored} analysed ${strongest.scored === 1 ? 'path' : 'paths'} of ${strongest.total} simulations`
+    : `${strongest.scored} analysed ${strongest.scored === 1 ? 'path' : 'paths'}`;
 
   return (
-    <section className="spotlight" aria-label="Path Alpha overview">
-      {/* Ambient background chart */}
-      <div className="spotlight__chart" aria-hidden="true">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={series} margin={{ top: 8, right: 0, left: 0, bottom: 0 }}>
-            <defs>
-              <linearGradient id="spotlight-grad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%"  stopColor={primary} stopOpacity={0.45} />
-                <stop offset="60%" stopColor={primary} stopOpacity={0.10} />
-                <stop offset="100%" stopColor={primary} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <YAxis hide domain={['dataMin - 10', 'dataMax + 8']} />
-            <Tooltip content={<HeroTooltip />} cursor={{ stroke: primary, strokeWidth: 1, strokeDasharray: '4 4' }} />
-            <Area
-              type="monotone"
-              dataKey="v"
-              stroke={primary}
-              strokeWidth={2.5}
-              fill="url(#spotlight-grad)"
-              dot={false}
-              activeDot={{ r: 4, fill: primary, stroke: 'var(--bg-surface)', strokeWidth: 2 }}
-              animationDuration={1100}
-              animationEasing="ease-out"
-            />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
+    <section className="spotlight" aria-label="Your strongest analysed path">
+      {/* Ambient background chart — the decision score of each analysed path */}
+      {series.length > 0 && (
+        <div className="spotlight__chart" aria-hidden="true">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={series} margin={{ top: 8, right: 0, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="spotlight-grad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%"  stopColor={primary} stopOpacity={0.45} />
+                  <stop offset="60%" stopColor={primary} stopOpacity={0.10} />
+                  <stop offset="100%" stopColor={primary} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <YAxis hide domain={['dataMin - 10', 'dataMax + 8']} />
+              <Tooltip content={<HeroTooltip />} cursor={{ stroke: primary, strokeWidth: 1, strokeDasharray: '4 4' }} />
+              <Area
+                type="monotone"
+                dataKey="v"
+                stroke={primary}
+                strokeWidth={2.5}
+                fill="url(#spotlight-grad)"
+                dot={series.length === 1 ? { r: 4, fill: primary } : false}
+                activeDot={{ r: 4, fill: primary, stroke: 'var(--bg-surface)', strokeWidth: 2 }}
+                animationDuration={1100}
+                animationEasing="ease-out"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      )}
 
       {/* Ambient glows */}
       <div className="spotlight__glow spotlight__glow--a" aria-hidden="true" />
@@ -89,27 +91,28 @@ export default function SpotlightHero({ stats, advisor, onDeepDive }) {
       <div className="spotlight__content">
         <div className="spotlight__badge">
           <Sparkles size={12} strokeWidth={2} />
-          <span>Decision Engine Output</span>
-          <span className="spotlight__live-dot" />
+          <span>Strongest path so far</span>
         </div>
 
         <div className="spotlight__headline">
           <div className="spotlight__metric-block">
-            <span className="spotlight__grade">{pathAlpha.label ?? 'A/B'}</span>
+            {strongest.grade && <span className="spotlight__grade">{strongest.grade}</span>}
             <div className="spotlight__figure">
-              <span className="spotlight__value">
-                {pathAlpha.trend === 'down' ? '' : '+'}{pathAlpha.value ?? 0}%
-              </span>
-              <TrendPill trend={pathAlpha.trend} />
+              <span className="spotlight__value">{strongest.value}%</span>
             </div>
-            <span className="spotlight__caption">Path Alpha — projected edge over baseline</span>
+            <span className="spotlight__caption">
+              Decision score — {strongest.title}
+            </span>
+            <span className="spotlight__sample">{sample}</span>
           </div>
 
           <div className="spotlight__aside">
-            <p className="spotlight__takeaway">
-              <span className="spotlight__takeaway-icon"><Sparkles size={13} strokeWidth={2} /></span>
-              {takeaway}
-            </p>
+            {takeaway && (
+              <p className="spotlight__takeaway">
+                <span className="spotlight__takeaway-icon"><Sparkles size={13} strokeWidth={2} /></span>
+                {takeaway}
+              </p>
+            )}
             <button type="button" className="spotlight__cta" onClick={onDeepDive}>
               Deep Dive with AI
               <ArrowRight size={14} strokeWidth={2.5} />

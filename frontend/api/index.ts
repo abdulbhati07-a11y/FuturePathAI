@@ -419,6 +419,176 @@ function buildNotifications(sims: any[]): any[] {
   return items.slice(0, 12);
 }
 
+// ── Dashboard summary ─────────────────────────────────────────────────────────
+// The dashboard's headline figures, derived from the caller's own rows — the rule
+// buildNotifications follows, applied to the most prominent screen in the app.
+//
+// What used to fill this space was invented in the browser and re-invented every
+// two seconds: a "Stability Index" of 84.2% attributed to "Market Volatility
+// Analysis", a "Projected Capital" of $1.4M under a "Portfolio Projection" label,
+// a "Path Alpha" of +26% from a "Decision Engine Output", sparklines plotted from
+// Math.random(), a MARKET CORRELATION panel quoting the S&P 500, the NASDAQ
+// Composite, the VIX and an interest rate with live-looking percentage moves, an
+// "AI Advisor" message drawn at random from five canned lines (one describing a
+// "Series C simulation" no account has ever owned), a next-step checklist whose
+// ticks were `Math.random() > 0.5` and so flickered on every tick, and a 99.95%
+// "simulation uptime". None of it was fetched, and none of it was true.
+//
+// It was also shown only to accounts that HAD simulations — a brand-new account
+// gets the onboarding panel instead — so the invented market moves were aimed
+// precisely at the people with the most reason to believe them, on a product
+// whose purpose is helping someone weigh a real financial decision.
+//
+// Nothing below is a market figure, because this system has no market data feed
+// and inventing one is what the old code did. Every number is an aggregate over
+// the caller's own simulations and the reports generated from them, and each
+// carries the denominator it was computed over, so an average across two runs
+// cannot be read as a platform-wide truth.
+//
+// Pure and clock-free, like buildNotifications: identical rows always produce an
+// identical payload, `lastActivityAt` travels as an ISO stamp and is phrased on
+// the client, and trends are read off the series itself rather than off a window
+// measured against now. That also keeps it directly testable.
+const CATEGORY_LABELS: Record<string, string> = {
+  CAREER: 'Career', FINANCIAL: 'Financial', PERSONAL: 'Personal',
+  BUSINESS: 'Business', HEALTH: 'Health', EDUCATION: 'Education',
+};
+
+// Which way the latest reading sits against the ones before it, and whether that
+// is good news for this metric. Direction and sentiment are separate fields
+// because they disagree for risk: climbing risk is an up arrow and bad news, and
+// the single `trend` field the old cards used forced the UI to paint it green.
+function seriesTrend(history: number[], lowerIsBetter = false) {
+  if (history.length < 2) return { trend: 'stable', sentiment: 'neutral' };
+  const prior = history.slice(0, -1);
+  const diff = history[history.length - 1] - prior.reduce((a, b) => a + b, 0) / prior.length;
+  // Under a point of movement is noise, not a direction.
+  if (Math.abs(diff) < 1) return { trend: 'stable', sentiment: 'neutral' };
+  const rising = diff > 0;
+  return { trend: rising ? 'up' : 'down', sentiment: (lowerIsBetter ? !rising : rising) ? 'good' : 'bad' };
+}
+
+function buildDashboardSummary(sims: any[]) {
+  const iso = (v: any) => {
+    if (v instanceof Date) return Number.isNaN(v.getTime()) ? null : v.toISOString();
+    if (typeof v === 'string' && v) { const d = new Date(v); return Number.isNaN(d.getTime()) ? null : d.toISOString(); }
+    return null;
+  };
+  // `Report.scores` is a jsonb column the API writes JSON.stringify() into, so it
+  // comes back as a string here and as an object if that ever changes.
+  const parse = (v: any) => {
+    if (v && typeof v === 'object') return v;
+    if (typeof v === 'string' && v.trim()) { try { return JSON.parse(v); } catch { return null; } }
+    return null;
+  };
+
+  // Oldest first: the series under each card is a chronology. The caller orders
+  // newest-first so its row cap keeps the most recent work, not the first ever.
+  const rows = (Array.isArray(sims) ? sims : []).filter(s => s?.id).slice().reverse();
+
+  const totals = { simulations: rows.length, reports: 0, scored: 0, unfinished: 0 };
+  const confHistory: number[] = [], riskHistory: number[] = [], decHistory: number[] = [];
+  let strongest: { value: number; grade: string | null; title: string; simulationId: string } | null = null;
+  let lastActivityAt: string | null = null;
+  const categoryCounts = new Map<string, number>();
+
+  for (const s of rows) {
+    const at = iso(s.reports?.[0]?.updatedAt) ?? iso(s.updatedAt);
+    if (at && (lastActivityAt === null || at > lastActivityAt)) lastActivityAt = at;
+
+    const cat = str(s.category, 'PERSONAL');
+    categoryCounts.set(cat, (categoryCounts.get(cat) ?? 0) + 1);
+
+    const report = s.reports?.[0] ?? null;
+    if (report) totals.reports++; else totals.unfinished++;
+
+    // resolveScores already decides which copy of the triple to believe when the
+    // simulation columns and the report disagree, so this inherits that rule
+    // rather than re-deciding it here.
+    const t = resolveScores(s, parse(report?.scores));
+    if (t.confidenceScore !== null) confHistory.push(t.confidenceScore);
+    if (t.riskScore !== null) riskHistory.push(t.riskScore);
+    if (t.decisionScore === null) continue;
+    decHistory.push(t.decisionScore);
+    totals.scored++;
+    // Rows are chronological, so `>=` gives a tie to the more recent path.
+    if (!strongest || t.decisionScore >= strongest.value) {
+      strongest = {
+        value: t.decisionScore, grade: decisionGrade(t.decisionScore),
+        title: str(s.title, 'Untitled simulation'), simulationId: String(s.id),
+      };
+    }
+  }
+
+  const mean = (xs: number[]) => (xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : null);
+  const confAvg = mean(confHistory), riskAvg = mean(riskHistory), decAvg = mean(decHistory);
+
+  // Every card ships the sample it was computed over. 71% across two runs is a
+  // different claim from the same 71% across twenty, and the labels these cards
+  // used to carry ("Market Volatility Analysis") named an authority instead.
+  const denom = { scored: totals.scored, total: totals.simulations };
+
+  const stats = {
+    confidence: confAvg === null ? null
+      : { value: confAvg, unit: '%', history: confHistory, ...seriesTrend(confHistory), ...denom },
+    risk: riskAvg === null ? null
+      : { value: riskAvg, unit: 'pts', label: riskBand(riskAvg), history: riskHistory, ...seriesTrend(riskHistory, true), ...denom },
+    decision: decAvg === null ? null
+      : { value: decAvg, unit: '%', history: decHistory, ...seriesTrend(decHistory), ...denom },
+    strongest: strongest === null ? null : { ...strongest, ...denom },
+  };
+
+  const categories = [...categoryCounts.entries()]
+    .map(([id, count]) => ({
+      id, label: CATEGORY_LABELS[id] ?? id, count,
+      share: totals.simulations ? Math.round((count / totals.simulations) * 100) : 0,
+    }))
+    .sort((a, b) => b.count - a.count || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+
+  const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+
+  let message: string;
+  if (totals.simulations === 0) {
+    message = 'Run your first simulation and this panel will summarise what it found.';
+  } else if (totals.scored === 0) {
+    message = totals.reports === 0
+      ? `${plural(totals.unfinished, 'simulation')} started, none with a report yet. Open one and generate its report to see it analysed here.`
+      : `${plural(totals.reports, 'report')} generated, but none carries a full score — the forecast behind them was incomplete, so there is nothing to average yet.`;
+  } else {
+    const parts = [`Across ${plural(totals.scored, 'analysed path')}, confidence averages ${confAvg}% and risk ${riskAvg}/100 (${String(riskBand(riskAvg!)).toLowerCase()}).`];
+    if (strongest) {
+      parts.push(`Strongest so far: ${strongest.title} — ${strongest.value}%${strongest.grade ? `, grade ${strongest.grade}` : ''}.`);
+    }
+    if (totals.unfinished > 0) {
+      parts.push(`${plural(totals.unfinished, 'simulation')} still ${totals.unfinished === 1 ? 'has' : 'have'} no report.`);
+    }
+    message = parts.join(' ');
+  }
+
+  const advisor = {
+    // Not "AI Advisor · Current Analysis Active", which is what this panel said
+    // above a message picked at random: no model produced any of this and nothing
+    // is running. It is arithmetic over rows the user can open and check.
+    title: 'Your decision summary',
+    status: totals.simulations === 0
+      ? 'No simulations yet'
+      : `Derived from ${plural(totals.scored, 'analysed path')} of ${plural(totals.simulations, 'simulation')}`,
+    message,
+    // Each tick is a fact about the account, so it holds still. These used to be
+    // Math.random() > 0.5, re-rolled every two seconds while the user watched.
+    checklist: [
+      { id: 'ran',      label: 'Run your first simulation',        done: totals.simulations > 0 },
+      { id: 'reported', label: 'Generate a report',                done: totals.reports > 0 },
+      { id: 'second',   label: 'Analyse a second path to compare', done: totals.scored >= 2 },
+      totals.unfinished > 0
+        ? { id: 'finish', label: `Finish ${plural(totals.unfinished, 'unfinished simulation')}`, done: false }
+        : { id: 'finish', label: 'Every simulation has a report', done: totals.simulations > 0 },
+    ],
+  };
+
+  return { totals, lastActivityAt, stats, categories, advisor };
+}
+
 // ── AI helpers ────────────────────────────────────────────────────────────────
 async function aiChat(messages: any[], stream = false): Promise<Response> {
   // Primary: Groq (fast, free). Automatic fallback: Google Gemini via its
@@ -689,12 +859,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
 
-    // ── /ai/advisor-insight ───────────────────────────────────────────────────
-    if (path === '/ai/advisor-insight' && req.method === 'GET') {
-      const u = auth(req, res); if (!u) return;
-      return ok(res, { message: 'Market volatility is up 12% this week. Consider reviewing your high-risk equities.', type: 'warning', status: 'Current Analysis Active', checklist: [{ id:'c1',label:'Review AI recommendation above',done:false },{ id:'c2',label:'Run a new simulation',done:false }] });
-    }
-
     // ── /ai/generate-topic ────────────────────────────────────────────────────
     if (path === '/ai/generate-topic' && req.method === 'POST') {
       const u = auth(req, res); if (!u) return;
@@ -754,28 +918,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
 
-    // ── /analytics/dashboard-stats ────────────────────────────────────────────
-    if (path === '/analytics/dashboard-stats' && req.method === 'GET') {
+    // ── /dashboard/summary ────────────────────────────────────────────────────
+    // Every figure the dashboard shows, aggregated from the caller's own rows.
+    //
+    // This replaces three routes — /analytics/dashboard-stats,
+    // /analytics/market-correlation and /analytics/system-meta — plus
+    // /ai/advisor-insight. All four returned invented numbers: the stats route
+    // built its "Stability Index" and "Projected Capital" from Math.random(), the
+    // correlation route quoted made-up moves in the S&P 500, the NASDAQ and an
+    // interest rate, the meta route reported a 99.95% uptime it never measured,
+    // and the insight route told every account that "market volatility is up 12%
+    // this week" regardless of the week. No client called them — the browser
+    // fabricated the same figures locally instead — so they were four unused
+    // endpoints standing ready to serve fiction. See buildDashboardSummary.
+    if (path === '/dashboard/summary' && req.method === 'GET') {
       const u = auth(req, res); if (!u) return;
-      const h = (min:number,max:number,n:number) => Array.from({length:n},()=>+(min+Math.random()*(max-min)).toFixed(1));
-      return ok(res, { stabilityIndex:{value:+(75+Math.random()*20).toFixed(1),unit:'%',trend:'up',history:h(70,95,20)}, riskVector:{value:+(8+Math.random()*15).toFixed(1),unit:'pts',label:'Low',trend:'down',history:h(5,25,20)}, projectedCapital:{value:+(1.2+Math.random()*0.8).toFixed(2),unit:'M',prefix:'$',history:h(1.0,2.0,20)}, pathAlpha:{value:Math.floor(20+Math.random()*30),label:'A/B',trend:'up'} });
-    }
-
-    // ── /analytics/market-correlation ────────────────────────────────────────
-    if (path === '/analytics/market-correlation' && req.method === 'GET') {
-      const u = auth(req, res); if (!u) return;
-      const c = (b:number,v:number) => +( b+(Math.random()-.5)*v ).toFixed(2);
-      return ok(res, [
-        {id:'m1',label:'S&P 500 Index',changePercent:c(1.24,1.6),direction:'up'},
-        {id:'m2',label:'Interest Rate (Sim)',changePercent:c(-5.25,2.4),direction:'down'},
-        {id:'m3',label:'NASDAQ Composite',changePercent:c(0.87,3.0),direction:'up'},
-      ]);
-    }
-
-    // ── /analytics/system-meta ───────────────────────────────────────────────
-    if (path === '/analytics/system-meta' && req.method === 'GET') {
-      const u = auth(req, res); if (!u) return;
-      return ok(res, { simulationUptime:+(99.95+Math.random()*0.04).toFixed(2), lastRecalc:`${Math.floor(Math.random()*120)+1}s ago` });
+      const sims = await prisma.simulation.findMany({
+        where: { userId: u.sub },
+        // Newest first so the cap keeps recent work; buildDashboardSummary
+        // reverses it, because the series under each card is a chronology.
+        orderBy: { createdAt: 'desc' },
+        take: 200,
+        select: {
+          id: true, title: true, category: true, status: true, updatedAt: true,
+          riskScore: true, confidenceScore: true, decisionScore: true,
+          reports: { select: { scores: true, updatedAt: true }, take: 1 },
+        },
+      });
+      return ok(res, buildDashboardSummary(sims));
     }
 
     // ── /admin/analytics (ADMIN only) ────────────────────────────────────────

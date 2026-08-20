@@ -66,6 +66,63 @@
   background: color-mix(in srgb, var(--color-danger) 20%, transparent);
 }
 
+/* ── "Nothing analysed yet" notice ────────────────────────────
+   Sits where the SpotlightHero would go for a user who has started simulations
+   but has no scored report behind any of them. The hero used to render here
+   regardless, showing a "+26% Path Alpha" over a hardcoded curve — a headline
+   figure for an account with nothing to headline. Deliberately quiet: it is a
+   statement about the account, not a warning. */
+.dashboard-page__notice {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.dashboard-page__notice-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.dashboard-page__notice-body {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  margin: 0;
+  max-width: 60ch;
+}
+
+.dashboard-page__notice button {
+  margin-top: 4px;
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  color: var(--color-primary);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.dashboard-page__notice button:hover {
+  background: color-mix(in srgb, var(--color-primary) 20%, transparent);
+}
+
+.dashboard-page__notice button:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: var(--focus-ring);
+}
+
 /* ── Loading Skeletons ────────────────────────────────────── */
 .dashboard-skeleton {
   display: flex;

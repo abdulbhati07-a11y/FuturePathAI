@@ -6,14 +6,7 @@ import RecentSimulations    from '../components/RecentSimulations';
 import AdvisorPanel         from '../components/AdvisorPanel';
 import NotificationsDrawer  from '../components/NotificationsDrawer';
 import DashboardOnboarding  from '../components/DashboardOnboarding';
-import {
-  getDashboardStats,
-  getRecentSimulations,
-  getAdvisorInsight,
-  getMarketCorrelation,
-  getSystemMeta,
-} from '../api/dashboard';
-import { realTimeSimulation } from '../services/realTimeSimulation';
+import { getDashboardSummary, getRecentSimulations } from '../api/dashboard';
 import '../components/Skeleton.css';
 import './DashboardPage.css';
 
@@ -43,11 +36,8 @@ export default function DashboardPage() {
   // Use the authenticated user from context — no extra API call needed
   const { user: authUser } = useAuth();
 
-  const [stats, setStats]             = useState(null);
+  const [summary, setSummary]         = useState(null);
   const [simulations, setSimulations] = useState([]);
-  const [advisor, setAdvisor]         = useState(null);
-  const [correlations, setCorrelations] = useState([]);
-  const [meta, setMeta]               = useState(null);
   const [status, setStatus]           = useState('loading');
   const [errorMessage, setErrorMessage] = useState('');
   const [notifOpen, setNotifOpen]     = useState(false);
@@ -57,21 +47,14 @@ export default function DashboardPage() {
 
     async function loadDashboard() {
       try {
-        const [statsData, simsData, advisorData, correlationData, metaData] =
-          await Promise.all([
-            getDashboardStats(),
-            getRecentSimulations(),
-            getAdvisorInsight(),
-            getMarketCorrelation(),
-            getSystemMeta(),
-          ]);
+        const [summaryData, simsData] = await Promise.all([
+          getDashboardSummary(),
+          getRecentSimulations(),
+        ]);
 
         if (!isMounted) return;
-        setStats(statsData);
+        setSummary(summaryData);
         setSimulations(simsData);
-        setAdvisor(advisorData);
-        setCorrelations(correlationData);
-        setMeta(metaData);
         setStatus('ready');
       } catch (err) {
         if (!isMounted) return;
@@ -82,21 +65,11 @@ export default function DashboardPage() {
 
     loadDashboard();
 
-    // Subscribe to real-time updates, then start the 2s ticker that pushes them.
-    const unsubscribe = realTimeSimulation.subscribe((data) => {
-      if (!isMounted) return;
-      setStats(data.stats);
-      setAdvisor(data.advisor);
-      setCorrelations(data.correlations);
-      setMeta(data.meta);
-    });
-    realTimeSimulation.start();
-
-    return () => { 
-      isMounted = false; 
-      unsubscribe();
-      realTimeSimulation.stop();
-    };
+    // A `realTimeSimulation.subscribe(...)` / `.start()` pair used to live here,
+    // pushing a fresh set of Math.random() figures into state every two seconds.
+    // Nothing about this data changes without the user running a simulation, so
+    // there is nothing to subscribe to: it loads once, like the rest of the page.
+    return () => { isMounted = false; };
   }, []);
 
   if (status === 'loading') {
@@ -123,8 +96,17 @@ export default function DashboardPage() {
     || authUser?.name?.split(' ')[0]
     || 'there';
 
-  // Is this a new user with no simulations yet?
-  const isNewUser = simulations.length === 0;
+  const stats   = summary?.stats ?? null;
+  const totals  = summary?.totals ?? { simulations: 0, reports: 0, scored: 0, unfinished: 0 };
+
+  // Is this a new user with no simulations yet? `totals` counts every row, not
+  // just the five most recent ones this page lists.
+  const isNewUser = totals.simulations === 0;
+
+  // A simulation with no finished report carries no scores, so there is no
+  // headline figure and no series to plot. The hero and the stat cards both
+  // render nothing in that case — this is what goes in their place.
+  const nothingScored = !isNewUser && totals.scored === 0;
 
   return (
     <div className="dashboard-page">
@@ -144,21 +126,32 @@ export default function DashboardPage() {
         ) : (
           /* ── Returning user — spotlight hero + content ────────────────── */
           <>
-            <Suspense fallback={<div className="skeleton skeleton-chart" style={{ height: 220 }} />}>
-              <SpotlightHero
-                stats={stats}
-                advisor={advisor}
-                onDeepDive={() => navigate('/app/advisor')}
-              />
-            </Suspense>
+            {nothingScored ? (
+              <div className="dashboard-page__notice">
+                <p className="dashboard-page__notice-title">No analysed paths yet</p>
+                <p className="dashboard-page__notice-body">{summary?.advisor?.message}</p>
+                <button type="button" onClick={() => navigate('/app/history')}>
+                  Open your simulations
+                </button>
+              </div>
+            ) : (
+              <Suspense fallback={<div className="skeleton skeleton-chart" style={{ height: 220 }} />}>
+                <SpotlightHero
+                  stats={stats}
+                  advisor={summary?.advisor}
+                  onDeepDive={() => navigate('/app/advisor')}
+                />
+              </Suspense>
+            )}
 
-            {/* Path Alpha is featured in the SpotlightHero above, so hide its card here */}
+            {/* The strongest path is featured in the SpotlightHero above, so its
+                card is hidden here to avoid printing the same figure twice. */}
             <Suspense fallback={
               <div className="dashboard-skeleton__stats" style={{ marginTop: '1.5rem' }}>
                 {[0,1,2].map(i => <div key={i} className="dashboard-skeleton__stat-card skeleton" />)}
               </div>
             }>
-              <StatsGrid stats={stats} exclude={['pathAlpha']} />
+              <StatsGrid stats={stats} exclude={['strongest']} />
             </Suspense>
 
             <div className="dashboard-page__grid">
@@ -173,9 +166,10 @@ export default function DashboardPage() {
 
               <div className="dashboard-page__grid-side">
                 <AdvisorPanel
-                  advisor={advisor}
-                  correlations={correlations}
-                  meta={meta}
+                  advisor={summary?.advisor}
+                  categories={summary?.categories}
+                  totals={totals}
+                  lastActivityAt={summary?.lastActivityAt}
                   onDeepDive={() => navigate('/app/advisor')}
                 />
               </div>

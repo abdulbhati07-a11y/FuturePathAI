@@ -59,19 +59,11 @@
 }
 .spotlight__badge svg { flex-shrink: 0; }
 
-.spotlight__live-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--color-success);
-  box-shadow: 0 0 8px var(--color-success);
-  animation: pulse-live 2s ease-in-out infinite;
-  margin-left: 0.15rem;
-}
-
-@keyframes pulse-live {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
+/* A pulsing green dot used to sit in this badge next to "Decision Engine
+   Output". Nothing streams here — the figure is the best decision score across
+   the reports the user has generated, and it changes when they generate another
+   one. The dot and its keyframes are gone with the two-second ticker that made
+   the number twitch. */
 
 /* Headline */
 .spotlight__headline {
@@ -116,6 +108,19 @@
   color: var(--text-secondary);
   max-width: 280px;
   line-height: 1.4;
+}
+
+/* The denominator, printed next to the headline figure. A best-of across two
+   analysed paths and a best-of across twenty are different claims, and the badge
+   above says only which figure this is, not how much it rests on. */
+.spotlight__sample {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-tertiary);
+  max-width: 280px;
 }
 
 .spotlight__takeaway {
@@ -167,28 +172,10 @@
   transform: translateY(-1px);
 }
 
-/* Trend pill */
-.spotlight__trend {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.25em 0.55em;
-  border-radius: 5px;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-.spotlight__trend--up {
-  background: color-mix(in srgb, var(--color-success) 15%, transparent);
-  color: var(--color-success);
-}
-.spotlight__trend--down {
-  background: color-mix(in srgb, var(--color-danger) 15%, transparent);
-  color: var(--color-danger);
-}
-.spotlight__trend--flat {
-  background: color-mix(in srgb, var(--text-secondary) 12%, transparent);
-  color: var(--text-secondary);
-}
+/* A trend pill lived here, showing "+26%" beside the headline figure. The
+   headline is now a best-of across the user's analysed paths, and a single
+   maximum has no direction to point in — the per-metric arrows on the stat cards
+   below carry the trends, where there is a real series behind them. */
 
 .spotlight__tooltip {
   background: var(--bg-surface);

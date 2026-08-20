@@ -49,19 +49,10 @@
   margin: 2px 0 0;
 }
 
-.advisor-panel__status-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.advisor-panel__live-badge {
-  font-size: 9px;
-  font-weight: 700;
-  color: var(--color-success);
-  letter-spacing: 0.05em;
-  animation: pulse 2s ease-in-out infinite;
-}
+/* A "● Live" badge pulsed next to the status line, and a matching one sat on the
+   market-correlation heading. Nothing in this panel streams: it is recomputed
+   when the user finishes a simulation. Both badges, their status row and the
+   pulse keyframes are gone with the two-second ticker behind them. */
 
 .advisor-panel__message {
   font-size: 13px;
@@ -143,66 +134,54 @@
   margin: 0 0 12px;
 }
 
-.advisor-panel__correlations {
+/* The market-correlation rows this replaces had an is-up/is-down colour pair
+   driven by a random percentage move, plus a description line that faded back in
+   every two seconds as the number was re-rolled. A category count has no
+   direction, so there is one bar colour and nothing animates. */
+.advisor-panel__categories {
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
 
-.correlation-row__top {
+.category-row__top {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
+  gap: 8px;
   margin-bottom: 6px;
 }
 
-.correlation-row__label {
+.category-row__label {
   font-size: 12.5px;
   color: var(--text-secondary);
 }
 
-.correlation-row__change {
-  display: flex;
-  align-items: center;
-  gap: 2px;
+.category-row__count {
   font-size: 11.5px;
   font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
-.correlation-row__change.is-up {
-  color: var(--color-success);
+.category-row__share {
+  font-weight: 600;
+  color: var(--text-tertiary);
 }
 
-.correlation-row__change.is-down {
-  color: var(--color-danger);
-}
-
-.correlation-row__track {
+.category-row__track {
   height: 4px;
   border-radius: 4px;
   background: var(--bg-surface-elevated);
   overflow: hidden;
 }
 
-.correlation-row__fill {
+.category-row__fill {
   display: block;
   height: 100%;
   border-radius: 4px;
-}
-
-.correlation-row__fill.is-up {
-  background: var(--color-success);
-}
-
-.correlation-row__fill.is-down {
-  background: var(--color-danger);
-}
-
-.correlation-row__description {
-  font-size: 10px;
-  color: var(--text-tertiary);
-  margin-top: 4px;
-  animation: smoothFade var(--dur-slow) var(--ease-out);
+  background: var(--color-primary);
 }
 
 .advisor-panel__meta {
@@ -232,57 +211,14 @@
   box-shadow: var(--focus-ring);
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-@keyframes smoothFade {
-  0% {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.advisor-panel__card--live {
-  position: relative;
-  overflow: hidden;
-}
-
-.advisor-panel__section--live {
-  position: relative;
-}
+/* `@keyframes pulse` (the live badges) and `@keyframes smoothFade` (the
+   correlation description re-appearing on every re-roll) were the only two
+   animations in this file, and both existed to dress up the two-second ticker.
+   Removed with it, along with the --live modifier classes they drove. */
 
 .advisor-panel__section-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 12px;
-}
-
-.advisor-panel__section-live {
-  font-size: 9px;
-  font-weight: 700;
-  color: var(--color-success);
-  letter-spacing: 0.05em;
-  animation: pulse 2s ease-in-out infinite;
-}
-
-.advisor-panel__meta--live {
-  position: relative;
-}
-
-.correlation-row__fill {
-  display: block;
-  height: 100%;
-  border-radius: 4px;
-  transition: width var(--dur-slow) var(--ease-out);
 }

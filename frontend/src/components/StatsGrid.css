@@ -33,30 +33,17 @@
   border-color: color-mix(in srgb, var(--color-primary) 25%, transparent);
 }
 
-/* ── Live dot (top-left pulse) ────────────────────────────────────────────── */
-.stat-card__live-dot {
-  position: absolute;
-  top: 11px;
-  left: 11px;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--color-success);
-  box-shadow: 0 0 6px var(--color-success);
-  animation: live-pulse 2.5s ease-in-out infinite;
-}
-
-@keyframes live-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.5; transform: scale(0.85); }
-}
+/* A pulsing green "live" dot used to sit at each card's top-left. Nothing on
+   this grid is live: the figures are averages over the user's finished
+   simulations, and they change when the user finishes another one. The dot was
+   driven by a two-second Math.random() ticker that made every card's number
+   twitch, which is what made it look live. Both are gone. */
 
 /* ── Card head ────────────────────────────────────────────────────────────── */
 .stat-card__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-left: 18px;  /* clear the live dot */
 }
 
 .stat-card__label {
@@ -67,9 +54,11 @@
   text-transform: uppercase;
 }
 
-.stat-card__trend--up     { color: var(--color-success); }
-.stat-card__trend--down   { color: var(--color-danger);  }
-.stat-card__trend--stable { color: var(--text-secondary); }
+/* Direction is the arrow, sentiment is the colour — see TrendIcon. Rising risk
+   points up and reads red; rising confidence points up and reads green. */
+.stat-card__trend--good    { color: var(--color-success); }
+.stat-card__trend--bad     { color: var(--color-danger);  }
+.stat-card__trend--neutral { color: var(--text-secondary); }
 
 /* ── Value ────────────────────────────────────────────────────────────────── */
 .stat-card__value {
