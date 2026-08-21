@@ -3,10 +3,14 @@ import PublicNav from '../components/landing/PublicNav';
 import SiteFooter from '../components/SiteFooter';
 import './LegalPage.css';
 
+// One date for all three documents. They were revised together, so a per-page
+// literal only creates the chance of them drifting apart silently.
+const LAST_UPDATED = 'August 20, 2026';
+
 const CONTENT = {
   privacy: {
     title: 'Privacy Policy',
-    lastUpdated: 'January 1, 2025',
+    lastUpdated: LAST_UPDATED,
     sections: [
       {
         heading: 'Information We Collect',
@@ -32,7 +36,7 @@ const CONTENT = {
   },
   terms: {
     title: 'Terms of Service',
-    lastUpdated: 'January 1, 2025',
+    lastUpdated: LAST_UPDATED,
     sections: [
       {
         heading: 'Acceptance of Terms',
@@ -58,7 +62,7 @@ const CONTENT = {
   },
   cookies: {
     title: 'Cookie Policy',
-    lastUpdated: 'January 1, 2025',
+    lastUpdated: LAST_UPDATED,
     sections: [
       {
         heading: 'What Are Cookies',
