@@ -9,6 +9,7 @@ import { useAuth }         from '../context/AuthContext';
 import { useTheme }        from '../context/ThemeContext';
 import { useGlobalSearch } from '../hooks/useGlobalSearch';
 import { useNotifications } from '../hooks/useNotifications';
+import Logo                 from './Logo';
 import './AppNavbar.css';
 
 const APP_NAV_ITEMS = [
@@ -186,7 +187,7 @@ export default function AppNavbar({ pageTitle, onMenuToggle, menuOpen, activeIte
           }
         </button>
         <div className="app-navbar__brand-mobile">
-          <Sparkles size={16} strokeWidth={2} />
+          <Logo size={18} strokeWidth={2} />
         </div>
         
         {/* Desktop Navigation Links */}

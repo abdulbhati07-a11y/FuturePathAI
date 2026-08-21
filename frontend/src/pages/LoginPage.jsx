@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Eye, EyeOff, Sparkles, ArrowRight, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, AlertCircle } from 'lucide-react';
+import Logo from '../components/Logo';
 import './AuthPages.css';
 
 export default function LoginPage() {
@@ -37,7 +38,7 @@ export default function LoginPage() {
       <div className="auth-card">
         {/* Brand */}
         <div className="auth-card__brand" onClick={() => navigate('/')} role="button" tabIndex={0} onKeyDown={e => e.key === 'Enter' && navigate('/')}>
-          <span className="auth-card__brand-icon"><Sparkles size={16} strokeWidth={2} /></span>
+          <span className="auth-card__brand-icon"><Logo size={16} strokeWidth={2} /></span>
           <span className="auth-card__brand-name">FuturePath AI</span>
         </div>
 

@@ -1,7 +1,8 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useState } from 'react';
-import { Menu, X, Sparkles } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import Logo from '../Logo';
 import './PublicNav.css';
 
 // `hash` links scroll within the landing page; `path` links are real routes.
@@ -31,7 +32,7 @@ export default function PublicNav() {
     <header className="public-nav">
       {/* Brand */}
       <button type="button" className="public-nav__brand" onClick={() => navigate('/')}>
-        <span className="public-nav__brand-icon"><Sparkles size={14} strokeWidth={2} /></span>
+        <span className="public-nav__brand-icon"><Logo size={15} strokeWidth={2} /></span>
         FuturePath AI
       </button>
 

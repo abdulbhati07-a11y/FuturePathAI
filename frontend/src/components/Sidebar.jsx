@@ -4,6 +4,7 @@ import {
   ExternalLink, LogOut, Globe, X,
 } from 'lucide-react';
 import { useAuth }     from '../context/AuthContext';
+import Logo            from './Logo';
 import './Sidebar.css';
 
 const APP_NAV_ITEMS = [
@@ -65,7 +66,7 @@ export default function Sidebar({
       {/* ── Brand + mobile close button ─────────────────────────────────── */}
       <div className="sidebar__brand">
         <div className="sidebar__brand-icon">
-          <Sparkles size={14} strokeWidth={2} />
+          <Logo size={16} strokeWidth={2} />
         </div>
         <div className="sidebar__brand-text">
           <span className="sidebar__brand-name">FuturePath AI</span>
