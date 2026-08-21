@@ -757,15 +757,38 @@ async function aiChat(messages: any[], stream = false): Promise<Response> {
     { status: 503, headers: { 'Content-Type': 'application/json' } },
   );
 }
-const SYSTEM = `You are FuturePath AI — an expert decision intelligence system. Guide users through life-decision simulations by asking one focused question at a time. Keep responses concise (2-4 sentences).
+// The number of answered questions after which the report is offered. The UI
+// uses the same threshold to surface its "report generation available" state.
+const REPORT_THRESHOLD = 5;
+
+const SYSTEM_BASE = `You are FuturePath AI — an expert decision intelligence system. Guide users through life-decision simulations by asking one focused question at a time. Keep responses concise (2-4 sentences).
 
 After each question, offer 3-4 likely answers as lettered options on their own lines, formatted exactly as:
 A) <short answer>
 B) <short answer>
 C) <short answer>
-Keep each option under 60 characters. These render as tappable chips, but the user may also type their own answer, so never say "choose A/B/C" — phrase the question so a free-text reply works too. Do not add options to statements that aren't questions.
+Keep each option under 60 characters. These render as tappable chips, but the user may also type their own answer, so never say "choose A/B/C" — phrase the question so a free-text reply works too. Do not add options to statements that aren't questions.`;
 
-After 4-5 exchanges say: "I'm ready to generate your full simulation report."`;
+/**
+ * Build the system prompt for one turn.
+ *
+ * The readiness sentinel used to be a bare "after 4-5 exchanges say …", which
+ * asked the model to count its own turns — something LLMs do unreliably, so it
+ * routinely drifted to 9-10 questions before offering the report. We now count
+ * server-side and tell the model exactly where it is, which turns the sentinel
+ * into a deterministic instruction instead of a guess.
+ */
+function systemPrompt(answered: number) {
+  if (answered >= REPORT_THRESHOLD) {
+    return `${SYSTEM_BASE}
+
+The user has already answered ${answered} questions — that is enough for a full report. End THIS reply with exactly: "I'm ready to generate your full simulation report."
+The conversation is not over: if the user keeps talking, keep answering their questions and going deeper on the trade-offs, and repeat that same sentence at the end of every later reply.`;
+  }
+  return `${SYSTEM_BASE}
+
+The user has answered ${answered} of ${REPORT_THRESHOLD} questions so far. Ask question ${answered + 1}. Do NOT offer to generate the report yet — only after ${REPORT_THRESHOLD} answers.`;
+}
 
 function detectCategory(m: string) {
   const l = m.toLowerCase();
@@ -1019,7 +1042,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (p('/ai/simulations/') && path.endsWith('/chat') && req.method === 'POST') {
       const u = auth(req, res); if (!u) return;
       const { message, messages } = req.body ?? {};
-      const sysMsg = { role:'system', content: SYSTEM };
+      // Count the user's answers so the readiness sentinel fires on a real
+      // number rather than the model's own estimate. `messages` already
+      // includes the newest user turn (see src/api/chat.js).
+      const answered = Array.isArray(messages) && messages.length > 0
+        ? messages.filter((m: any) => m.role === 'user').length
+        : (message ? 1 : 0);
+      const sysMsg = { role:'system', content: systemPrompt(answered) };
       const payload = Array.isArray(messages) && messages.length > 0
         ? [sysMsg, ...messages.map((m:any) => ({ role: m.role==='assistant'?'assistant':'user', content: String(m.content) }))]
         : [sysMsg, { role:'user', content: message || 'Start the simulation. Ask your first question.' }];

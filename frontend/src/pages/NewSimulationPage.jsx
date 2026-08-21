@@ -91,6 +91,9 @@ export default function NewSimulationPage() {
   const [isGenerating, setIsGenerating]     = useState(false);
   const [initError, setInitError]           = useState('');
   const [resumeCtx, setResumeCtx]           = useState(null);
+  // The in-chat report card can be dismissed ("keep chatting"), so it never
+  // nags. The side-panel indicator and the footer button stay available.
+  const [reportCardHidden, setReportCardHidden] = useState(false);
 
   const abortRef     = useRef(false);
   const composerRef  = useRef(null);
@@ -474,6 +477,16 @@ export default function NewSimulationPage() {
   // stays free to keep chatting to refine it.
   const answeredCount   = messages.filter(m => m.role === 'user').length;
   const reportAvailable = answeredCount >= REPORT_THRESHOLD || reportReady;
+  // The in-chat card shows once the threshold is crossed, until dismissed.
+  // `!busy` keeps it out of the way while a reply is streaming in.
+  const showReportCard  = reportAvailable && !busy && !reportCardHidden;
+
+  // Reveal the readiness card the moment it appears. It adds height below the
+  // last message, so the sticky-scroll pass that ran on the stream's final
+  // token would otherwise leave it just under the fold.
+  useEffect(() => {
+    if (showReportCard) scrollToBottom();
+  }, [showReportCard, scrollToBottom]);
 
   return (
     <div className="new-sim-page">
@@ -532,6 +545,45 @@ export default function NewSimulationPage() {
                   onOptionClick={handleOptionClick}
                 />
               ))}
+
+              {/* In-chat readiness card. Sits at the end of the thread so it
+                  reads as part of the conversation rather than a detached
+                  banner, and scrolls with it. Dismissible — the chat is never
+                  over, and the side panel keeps the option in reach. */}
+              {showReportCard && (
+                <div className="new-sim-page__ready-card">
+                  <div className="new-sim-page__ready-head">
+                    <span className="new-sim-page__ready-check">✓</span>
+                    <span>Report generation available</span>
+                  </div>
+                  <p className="new-sim-page__ready-text">
+                    You've answered enough for a complete simulation report. Generate it
+                    now — or keep chatting to add detail and make it sharper. There's no
+                    limit on questions.
+                  </p>
+                  <div className="new-sim-page__ready-actions">
+                    <button
+                      type="button"
+                      className="new-sim-page__ready-btn"
+                      onClick={handleGenerateReport}
+                      disabled={busy || !simulationId}
+                    >
+                      {isGenerating ? (
+                        <><span className="new-sim-page__spinner" /> Generating Report…</>
+                      ) : (
+                        '⚡ Generate Full Report'
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      className="new-sim-page__ready-later"
+                      onClick={() => setReportCardHidden(true)}
+                    >
+                      Keep chatting
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {showJumpButton && (
@@ -566,26 +618,10 @@ export default function NewSimulationPage() {
               </div>
             )}
 
-            {reportAvailable && !busy && (
-              <div className="new-sim-page__report-cta">
-                <span className="new-sim-page__report-cta-text">
-                  ⚡ Enough context gathered — generate your full report now, or keep chatting to refine it.
-                </span>
-                <button
-                  type="button"
-                  className="new-sim-page__report-cta-btn"
-                  onClick={handleGenerateReport}
-                  disabled={busy || !simulationId}
-                >
-                  Generate Full Report →
-                </button>
-              </div>
-            )}
-
             {/* The composer is ALWAYS available — the chat is never force-ended.
-                Once enough has been shared, report generation is surfaced (in the
-                side panel and the CTA above), but the user can keep chatting with
-                no step limit. */}
+                Once enough has been shared, report generation is surfaced (in
+                the thread and the side panel), but the user can keep chatting
+                with no step limit. */}
             <ChatComposer
               ref={composerRef}
               onSend={handleSend}
@@ -621,8 +657,7 @@ export default function NewSimulationPage() {
                 <span>Report generation available</span>
               </div>
               <p className="new-sim-page__report-avail-text">
-                You've shared enough to generate your full report. Generate it now,
-                or keep chatting to refine it — there's no step limit.
+                Enough answers gathered. Keep chatting to refine it — no step limit.
               </p>
               <button
                 type="button"

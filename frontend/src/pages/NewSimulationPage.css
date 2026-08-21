@@ -161,66 +161,119 @@
   background: color-mix(in srgb, var(--color-primary) 12%, transparent);
 }
 
-/* ── Report-ready CTA (appears when the AI signals it has enough context) ─ */
-.new-sim-page__report-cta {
+/* ── In-chat readiness card ────────────────────────────────────────────────
+   Rendered as the last item in the message thread once the report threshold is
+   crossed, so it reads as a beat in the conversation and scrolls with it. It is
+   an offer, never a gate — the composer below stays live. */
+.new-sim-page__ready-card {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 14px 18px;
+  flex-direction: column;
+  gap: 10px;
+  margin: 6px 0 2px;
+  padding: 16px 18px;
   border-radius: var(--radius-md);
   background: linear-gradient(135deg,
-    color-mix(in srgb, var(--color-primary) 16%, transparent),
-    color-mix(in srgb, var(--color-primary) 6%, transparent));
-  border: 1px solid color-mix(in srgb, var(--color-primary) 40%, transparent);
-  animation: report-cta-in 0.35s var(--ease-out) both;
+    color-mix(in srgb, var(--color-primary) 15%, transparent),
+    color-mix(in srgb, var(--color-primary) 5%, transparent));
+  border: 1px solid color-mix(in srgb, var(--color-primary) 38%, transparent);
+  animation: report-cta-in 0.4s var(--ease-out) both;
 }
 
+/* Shared entrance for both readiness surfaces (in-chat card + side panel). */
 @keyframes report-cta-in {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.new-sim-page__report-cta-text {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-primary);
+.new-sim-page__ready-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-primary);
 }
 
-.new-sim-page__report-cta-btn {
+/* Circled tick — states plainly that a milestone was reached, without
+   implying the conversation has ended. */
+.new-sim-page__ready-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: var(--btn-primary-text);
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
   flex-shrink: 0;
+}
+
+.new-sim-page__ready-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.new-sim-page__ready-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.new-sim-page__ready-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   padding: 10px 18px;
   border-radius: var(--radius-sm);
   border: none;
   background: var(--color-primary);
   color: var(--btn-primary-text);
+  font-family: inherit;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
   transition: transform 0.15s ease, filter 0.15s ease;
 }
 
-.new-sim-page__report-cta-btn:hover:not(:disabled) {
+.new-sim-page__ready-btn:hover:not(:disabled) {
   filter: brightness(1.08);
   transform: translateY(-1px);
 }
 
-.new-sim-page__report-cta-btn:disabled {
+.new-sim-page__ready-btn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .new-sim-page__report-cta { animation: none; }
-  .new-sim-page__report-cta-btn:hover:not(:disabled) { transform: none; }
+.new-sim-page__ready-later {
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
 }
 
-@media (max-width: 640px) {
-  .new-sim-page__report-cta {
-    flex-direction: column;
-    align-items: stretch;
-    text-align: center;
-  }
+.new-sim-page__ready-later:hover {
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--color-primary) 45%, var(--border-strong));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .new-sim-page__ready-card { animation: none; }
+  .new-sim-page__ready-btn:hover:not(:disabled) { transform: none; }
 }
 
 /* ── Side panel: "report generation available" indicator ───────────────────
