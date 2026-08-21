@@ -767,7 +767,9 @@ After each question, offer 3-4 likely answers as lettered options on their own l
 A) <short answer>
 B) <short answer>
 C) <short answer>
-Keep each option under 60 characters. These render as tappable chips, but the user may also type their own answer, so never say "choose A/B/C" — phrase the question so a free-text reply works too. Do not add options to statements that aren't questions.`;
+Keep each option under 60 characters. These render as tappable chips, but the user may also type their own answer, so never say "choose A/B/C" — phrase the question so a free-text reply works too. Do not add options to statements that aren't questions.
+
+Stay on the decision the user came with. Once it is established, never restart, never ask what they would like to simulate, and never switch topics — every later question digs deeper into that same decision.`;
 
 /**
  * Build the system prompt for one turn.
@@ -777,13 +779,27 @@ Keep each option under 60 characters. These render as tappable chips, but the us
  * routinely drifted to 9-10 questions before offering the report. We now count
  * server-side and tell the model exactly where it is, which turns the sentinel
  * into a deterministic instruction instead of a guess.
+ *
+ * Crossing the threshold changes nothing about the shape of the conversation:
+ * the model keeps asking one focused question at a time, on the same decision,
+ * with the same lettered options. It only adds the one-time sentinel that lets
+ * the UI offer the report. An earlier version told the model to "keep answering
+ * their questions" past the threshold and to repeat the sentinel every turn —
+ * which dropped it out of interview mode, so the tappable option chips stopped
+ * appearing and the reply turned into a nagging sign-off.
  */
 function systemPrompt(answered: number) {
-  if (answered >= REPORT_THRESHOLD) {
+  if (answered === REPORT_THRESHOLD) {
     return `${SYSTEM_BASE}
 
-The user has already answered ${answered} questions — that is enough for a full report. End THIS reply with exactly: "I'm ready to generate your full simulation report."
-The conversation is not over: if the user keeps talking, keep answering their questions and going deeper on the trade-offs, and repeat that same sentence at the end of every later reply.`;
+The user has now answered ${answered} questions — enough for a full report. In this reply, before your options, include this sentence on its own line: "I'm ready to generate your full simulation report."
+Then carry on exactly as before: ask your next focused question about the same decision, with its 3-4 lettered options. The conversation is NOT over and there is no question limit — the report is simply available whenever they want it.`;
+  }
+  if (answered > REPORT_THRESHOLD) {
+    return `${SYSTEM_BASE}
+
+The user has answered ${answered} questions and already knows the report is ready whenever they want it, so do not mention generating it again unless they ask.
+Continue the interview exactly as in the earlier steps: one focused question at a time about the same decision, always with its 3-4 lettered options, each question going deeper into the trade-offs, risks, timing, or numbers you have not covered yet. There is no limit on questions.`;
   }
   return `${SYSTEM_BASE}
 
