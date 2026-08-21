@@ -11,7 +11,10 @@ import { ChevronDown } from 'lucide-react';
 import { useStickyScroll } from '../hooks/useStickyScroll';
 import './NewSimulationPage.css';
 
-const TOTAL_STEPS = 6;
+// The chat is open-ended — the user can exchange as many messages as they like.
+// This is only the point at which we surface that a full report can now be
+// generated; it never caps or ends the conversation.
+const REPORT_THRESHOLD = 5;
 
 // Common decisions offered as one-tap chips in the opening message. Keep the
 // list to five so that — together with the "something else" option — the total
@@ -339,7 +342,9 @@ export default function NewSimulationPage() {
     const userMsg = { id: `u_${Date.now()}`, role: 'user', content: text.trim(), timestamp: ts() };
     const updatedMessages = [...messages, userMsg];
     setMessages(updatedMessages);
-    setCurrentStep(s => Math.min(s + 1, TOTAL_STEPS));
+    // Records step count for the autosaved draft only. It no longer gates the
+    // UI — the chat is never capped — so it increments freely.
+    setCurrentStep(s => s + 1);
 
     const history = toHistory(messages); // history BEFORE this user message
 
@@ -453,7 +458,6 @@ export default function NewSimulationPage() {
   // ── View results (quick navigate) ─────────────────────────────────────────
   // Function removed because users must generate the report before viewing it
 
-  const isComplete = currentStep >= TOTAL_STEPS && !isThinking && !isStreaming;
   const busy       = isThinking || isStreaming || isGenerating;
 
   // Detect the AI's own "ready to generate report" sentinel in the last
@@ -464,9 +468,12 @@ export default function NewSimulationPage() {
     !isStreaming && !isThinking &&
     /ready to generate your full simulation report/i.test(lastAiMessage?.content || '');
 
-  // Answered-question progress toward the ~5-exchange target the prompt aims for.
-  const answeredCount = messages.filter(m => m.role === 'user').length;
-  const targetQuestions = 5;
+  // Answered-question progress toward the report threshold. The chat is never
+  // capped: once the user has answered enough (or the AI signals it has enough
+  // context), we simply surface that a full report can be generated — the user
+  // stays free to keep chatting to refine it.
+  const answeredCount   = messages.filter(m => m.role === 'user').length;
+  const reportAvailable = answeredCount >= REPORT_THRESHOLD || reportReady;
 
   return (
     <div className="new-sim-page">
@@ -476,21 +483,20 @@ export default function NewSimulationPage() {
         <div className="new-sim-page__chat-col">
           {/* ── Step progress ─────────────────────────────────────────────── */}
           <div className="new-sim-page__progress">
-            {Array.from({ length: TOTAL_STEPS }, (_, i) => (
+            {Array.from({ length: REPORT_THRESHOLD }, (_, i) => (
               <div
                 key={i}
                 className={
                   'new-sim-page__progress-step' +
-                  (i < currentStep ? ' new-sim-page__progress-step--done' : '') +
-                  (i === currentStep && !isComplete ? ' new-sim-page__progress-step--active' : '') +
-                  (isComplete ? ' new-sim-page__progress-step--done' : '')
+                  (i < answeredCount ? ' new-sim-page__progress-step--done' : '') +
+                  (i === answeredCount && !reportAvailable ? ' new-sim-page__progress-step--active' : '')
                 }
               />
             ))}
             <span className="new-sim-page__progress-label">
-              {isComplete || reportReady
-                ? '✅ Ready for results'
-                : `Question ${Math.min(answeredCount + 1, targetQuestions)} of ~${targetQuestions}`}
+              {reportAvailable
+                ? '✅ Report ready'
+                : `Question ${Math.min(answeredCount + 1, REPORT_THRESHOLD)} of ~${REPORT_THRESHOLD}`}
             </span>
           </div>
 
@@ -560,10 +566,10 @@ export default function NewSimulationPage() {
               </div>
             )}
 
-            {reportReady && !isComplete && !isGenerating && (
+            {reportAvailable && !busy && (
               <div className="new-sim-page__report-cta">
                 <span className="new-sim-page__report-cta-text">
-                  ⚡ Enough context gathered — your full report is ready to generate.
+                  ⚡ Enough context gathered — generate your full report now, or keep chatting to refine it.
                 </span>
                 <button
                   type="button"
@@ -576,57 +582,62 @@ export default function NewSimulationPage() {
               </div>
             )}
 
-            {isComplete ? (
-              /* Simulation steps complete — prompt user to view results */
-              <div className="new-sim-page__complete-bar">
-                <p className="new-sim-page__complete-msg">
-                  ✅ Simulation complete — your results are ready.
-                </p>
-                <button
-                  type="button"
-                  className="new-sim-page__results-btn"
-                  onClick={handleGenerateReport}
-                  disabled={isGenerating}
-                >
-                  {isGenerating ? (
-                    <><span className="new-sim-page__spinner" /> Generating Report…</>
-                  ) : (
-                    'View Full Results →'
-                  )}
-                </button>
-              </div>
-            ) : (
-              <>
-                <ChatComposer
-                  ref={composerRef}
-                  onSend={handleSend}
-                  disabled={busy}
-                />
+            {/* The composer is ALWAYS available — the chat is never force-ended.
+                Once enough has been shared, report generation is surfaced (in the
+                side panel and the CTA above), but the user can keep chatting with
+                no step limit. */}
+            <ChatComposer
+              ref={composerRef}
+              onSend={handleSend}
+              disabled={busy}
+            />
 
-                <div className="new-sim-page__action-row">
-                  <SavePauseBar onSave={handleSaveDraft} saving={isSaving} />
+            <div className="new-sim-page__action-row">
+              <SavePauseBar onSave={handleSaveDraft} saving={isSaving} />
 
-                  <button
-                    type="button"
-                    className="new-sim-page__generate-btn"
-                    onClick={handleGenerateReport}
-                    disabled={busy || !simulationId}
-                    title="Run the AI analysis and generate your full report"
-                  >
-                    {isGenerating ? (
-                      <><span className="new-sim-page__spinner" /> Generating Report…</>
-                    ) : (
-                      '⚡ Generate Full Report'
-                    )}
-                  </button>
-                </div>
-              </>
-            )}
+              <button
+                type="button"
+                className="new-sim-page__generate-btn"
+                onClick={handleGenerateReport}
+                disabled={busy || !simulationId}
+                title="Run the AI analysis and generate your full report"
+              >
+                {isGenerating ? (
+                  <><span className="new-sim-page__spinner" /> Generating Report…</>
+                ) : (
+                  '⚡ Generate Full Report'
+                )}
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* ── Live insight panel ───────────────────────────────────────── */}
+        {/* ── Side panel: report availability + live insight ───────────── */}
         <div className="new-sim-page__insight-slot">
+          {reportAvailable && (
+            <div className="new-sim-page__report-avail" aria-live="polite">
+              <div className="new-sim-page__report-avail-head">
+                <span className="new-sim-page__report-avail-dot" />
+                <span>Report generation available</span>
+              </div>
+              <p className="new-sim-page__report-avail-text">
+                You've shared enough to generate your full report. Generate it now,
+                or keep chatting to refine it — there's no step limit.
+              </p>
+              <button
+                type="button"
+                className="new-sim-page__report-avail-btn"
+                onClick={handleGenerateReport}
+                disabled={busy || !simulationId}
+              >
+                {isGenerating ? (
+                  <><span className="new-sim-page__spinner" /> Generating…</>
+                ) : (
+                  'Generate Full Report →'
+                )}
+              </button>
+            </div>
+          )}
           <LiveInsightPanel insight={insight} metrics={metrics} />
         </div>
       </div>
