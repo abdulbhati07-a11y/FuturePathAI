@@ -4,7 +4,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useToast } from '../context/ToastContext';
 import {
   User, Bell, Shield, Palette, ChevronRight, Check,
-  Sparkles, Eye, EyeOff, AlertCircle, Sun, Moon, Sunset,
+  Sparkles, Eye, EyeOff, AlertCircle, Sun, Moon,
 } from 'lucide-react';
 import { apiClient } from '../api/client';
 import { NOTIF_KINDS, loadPrefs, savePrefs } from '../hooks/useNotifications';

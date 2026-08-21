@@ -52,7 +52,7 @@ async function request(path, options = {}) {
         ...options.headers,
       },
     });
-  } catch (networkErr) {
+  } catch {
     // Network failure (offline, CORS, etc.)
     const err = new Error('Network error — please check your connection.');
     err.status = 0;

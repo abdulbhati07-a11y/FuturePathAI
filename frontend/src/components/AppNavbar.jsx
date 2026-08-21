@@ -1,10 +1,9 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Bell, Search, ChevronDown, LogOut, Settings, User,
   Sparkles, Plus, X, Check, Moon, Sun,
   FileText, History, ArrowRight, Loader2, Menu,
-  LayoutGrid, FilePlus2, BookMarked, Globe
 } from 'lucide-react';
 import { useAuth }         from '../context/AuthContext';
 import { useTheme }        from '../context/ThemeContext';
@@ -24,7 +23,6 @@ const APP_NAV_ITEMS = [
 
 export default function AppNavbar({ pageTitle, onMenuToggle, menuOpen, activeItem }) {
   const navigate  = useNavigate();
-  const location  = useLocation();
   const { user, logout, token } = useAuth();
   const { theme, toggleTheme } = useTheme();
 

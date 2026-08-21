@@ -12,7 +12,7 @@
  */
 
 import {
-  createContext, useContext, useState, useCallback, useRef, useId,
+  createContext, useContext, useState, useCallback, useRef,
 } from 'react';
 import {
   CheckCircle2, XCircle, AlertTriangle, Info, X,

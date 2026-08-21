@@ -840,6 +840,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       if (req.method === 'PATCH') {
         const { name, email } = req.body ?? {};
+        if (email) {
+          const clash = await prisma.user.findUnique({ where: { email } });
+          if (clash && clash.id !== u.sub) return err(res, 'Email already in use', 409);
+        }
         const updated = await prisma.user.update({ where: { id: u.sub }, data: { ...(name && { name }), ...(email && { email }) } });
         return ok(res, { id: updated.id, name: updated.name, email: updated.email });
       }

@@ -19,7 +19,7 @@ Browser (Vite + React 19 SPA)
 Vercel Serverless Function  ──►  frontend/api/index.ts   (the whole API)
       │
       ├─ Prisma 7 + @prisma/adapter-pg ──►  Supabase Postgres (Supavisor pooler)
-      └─ Groq  (llama-3.1-8b-instant)  ──►  chat streaming + report/topic generation
+      └─ Groq  (openai/gpt-oss-120b)   ──►  chat streaming + report/topic generation
 ```
 
 There is **no NestJS server and no separate backend deployment**. Everything the
@@ -87,13 +87,14 @@ standard envelope: `{ success, message, data, errors }`.
 | GET/PATCH/DELETE | `/api/simulations/:id` | single simulation |
 | POST | `/api/simulations/:id/analyze` | run the scoring engine |
 | GET | `/api/simulations/:id/results` | report (public sims need no auth) |
-| GET | `/api/ai/advisor-insight` | live advisor insight |
 | POST | `/api/ai/generate-topic` | derive title + category from a prompt |
 | POST | `/api/ai/simulations/:id/chat` | **SSE** streaming chat |
-| GET | `/api/analytics/dashboard-stats` · `/market-correlation` · `/system-meta` | |
-| GET | `/api/admin/users` | **ADMIN role required** |
+| GET | `/api/dashboard/summary` | dashboard aggregates (the user's own data) |
+| GET | `/api/notifications` | items derived from the user's simulations |
 | POST | `/api/reports/generate/:simulationId` | generate AI report |
 | GET | `/api/reports/simulations/:id` | fetch a report |
+| GET | `/api/admin/analytics` | **ADMIN role required** |
+| GET | `/api/admin/users` | **ADMIN role required** |
 
 ---
 
@@ -161,7 +162,7 @@ else to the SPA's `index.html`.
 - **Frontend:** Vite 8, React 19, React Router 7, Recharts, three.js / react-three-fiber
 - **Backend:** one Vercel Node serverless function (TypeScript)
 - **Database:** Supabase Postgres via Prisma 7 + `@prisma/adapter-pg` (node-postgres)
-- **AI:** Groq — `llama-3.1-8b-instant` (SSE streaming), with Google Gemini (`gemini-flash-latest`) as an automatic failover
+- **AI:** Groq — `openai/gpt-oss-120b` (SSE streaming), with Google Gemini (`gemini-flash-latest`) as an automatic failover
 - **Auth:** JWT (`jsonwebtoken`) + `bcryptjs`
 
 ---

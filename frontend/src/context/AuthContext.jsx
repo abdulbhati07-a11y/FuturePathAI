@@ -79,7 +79,7 @@ export function AuthProvider({ children }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
-    } catch (e) {
+    } catch {
       throw new Error('Network error — please check your connection.');
     }
 
@@ -108,7 +108,7 @@ export function AuthProvider({ children }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password }),
       });
-    } catch (e) {
+    } catch {
       throw new Error('Network error — please check your connection.');
     }
 

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../api/client';
 import ChatMessage from '../components/chat/ChatMessage';
 import ChatComposer from '../components/chat/ChatComposer';
@@ -71,7 +70,6 @@ function toTranscript(msgs) {
 }
 
 export default function NewSimulationPage() {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -80,7 +78,7 @@ export default function NewSimulationPage() {
 
   const [simulationId, setSimulationId]     = useState(null);
   const [messages, setMessages]             = useState([]);
-  const [suggestions, setSuggestions]       = useState([]);
+  const [, setSuggestions]                  = useState([]);
   const [insight, setInsight]               = useState(null);
   const [metrics, setMetrics]               = useState(null);
   const [isThinking, setIsThinking]         = useState(false);

@@ -4,7 +4,6 @@ import {
   ExternalLink, LogOut, Globe, X,
 } from 'lucide-react';
 import { useAuth }     from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import './Sidebar.css';
 
 const APP_NAV_ITEMS = [
@@ -43,7 +42,6 @@ export default function Sidebar({
   onClose,
 }) {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
 
   const initials = user?.name
     ? user.name.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase()
