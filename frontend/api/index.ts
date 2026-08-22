@@ -816,8 +816,8 @@ function detectCategory(m: string) {
   return 'PERSONAL';
 }
 
-// Fallback quick-answers per category — sent only when the AI omits its own
-// lettered options, so the composer still shows tappable chips.
+// Fallback quick-answers per category — the last resort when neither the AI's
+// own reply nor the option-repair call below produced usable chips.
 const QUICK_ANSWERS: Record<string, string[]> = {
   CAREER:    ['Prioritize higher pay', 'Prioritize growth & learning', 'Weigh work-life balance', 'What are the biggest risks?'],
   FINANCIAL: ['I want lower risk', 'I want higher returns', 'Keep it liquid & flexible', 'What is the downside scenario?'],
@@ -826,6 +826,86 @@ const QUICK_ANSWERS: Record<string, string[]> = {
   HEALTH:    ['Focus on long-term outcome', 'Prioritize quality of life', 'Consider the recovery time', 'What are the trade-offs?'],
   PERSONAL:  ['Tell me more about the risks', 'What is the best-case scenario?', 'Weigh the pros and cons', 'What should I do next?'],
 };
+
+// ── Answer-chip guarantee ─────────────────────────────────────────────────────
+// The tappable chips in the UI are parsed out of the reply itself: the client
+// looks for "A) …" lines (see src/components/chat/messageFormat.jsx). So when
+// the model forgets to add them the chips silently vanish, which is exactly the
+// regression that hit every turn past the report threshold. Prompting is not a
+// guarantee, so the server now repairs its own output instead of trusting it.
+//
+// This regex is deliberately the same shape as the client's extractOptions —
+// if the two ever disagree, the server would "fix" replies the client can still
+// read, or leave broken ones alone.
+const OPTION_LINE = /^\s*([A-F])[).]\s+(.{1,80}?)\s*$/gm;
+const LETTERS = ['A', 'B', 'C', 'D'];
+
+function countOptionLines(text: string) {
+  return (text.match(OPTION_LINE) ?? []).length;
+}
+
+/** A reply needs chips when it asks something but offers nothing to tap. */
+function needsOptions(text: string) {
+  return text.includes('?') && countOptionLines(text) < 2;
+}
+
+/** Normalize model- or table-sourced options into short, chip-sized answers. */
+function sanitizeOptions(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const item of raw) {
+    if (typeof item !== 'string') continue;
+    const text = item
+      .replace(/^\s*[A-F][).]\s*/, '')     // a letter the model added anyway
+      .replace(/^\s*[-*•]\s*/, '')         // or a bullet
+      .replace(/^["'`]|["'`]$/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    // 60 chars is the cap the prompt asks for; longer text wraps badly in a chip.
+    if (!text || text.length > 60) continue;
+    const key = text.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(text);
+    if (out.length === LETTERS.length) break;
+  }
+  // Two is the client's own minimum — one chip reads as a command, not a choice.
+  return out.length >= 2 ? out : [];
+}
+
+/**
+ * Ask the model for answers to its own question. One small non-streaming call,
+ * made only on the rare turn that arrives without options, so it costs nothing
+ * on the happy path. Returns [] on any failure — the caller falls back again.
+ */
+async function repairOptions(reply: string): Promise<string[]> {
+  try {
+    const r = await aiChat([{
+      role: 'user',
+      content: `A user was asked this in a decision-simulation interview:\n\n"""${reply.slice(-600)}"""\n\nWrite 3 short, distinct answers the user might plausibly give. Write them in the user's voice (first person). Each under 55 characters. No letters, numbers or bullets.\nReturn ONLY a JSON array of 3 strings.`,
+    }]);
+    if (!r.ok) return [];
+    const body: any = await r.json();
+    const text: string = body?.choices?.[0]?.message?.content ?? '';
+    const json = text.slice(text.indexOf('['), text.lastIndexOf(']') + 1);
+    return sanitizeOptions(JSON.parse(json));
+  } catch {
+    return [];   // never let chip repair break the reply itself
+  }
+}
+
+/**
+ * Render options as the lettered lines the client parses into chips. `offset`
+ * skips letters the reply already used, so a reply carrying a lone "A) …" (one
+ * line is below the client's 2-line minimum, so it shows no chips) gets B/C/D
+ * appended rather than a second A.
+ */
+function formatOptionLines(options: string[], offset = 0) {
+  return '\n\n' + options
+    .map((o, i) => `${LETTERS[i + offset] ?? LETTERS[LETTERS.length - 1]}) ${o}`)
+    .join('\n');
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // MAIN ROUTER
@@ -1080,6 +1160,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!gr.ok) { send('error', `AI error: ${gr.status}`); res.end(); return; }
         const reader = (gr.body as any).getReader(), dec = new TextDecoder();
         let buf = '';
+        // Kept so we can check the finished reply for answer options below.
+        let reply = '';
         while(true) {
           const {done,value} = await reader.read(); if(done) break;
           buf += dec.decode(value,{stream:true});
@@ -1087,10 +1169,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           for(const line of lines) {
             if(!line.startsWith('data: ')) continue;
             const d = line.slice(6); if(d==='[DONE]') break;
-            try { const c = JSON.parse(d).choices?.[0]?.delta?.content; if(c) send('token',c); } catch{}
+            try { const c = JSON.parse(d).choices?.[0]?.delta?.content; if(c) { reply += c; send('token',c); } } catch{}
           }
         }
         const convoText = [message, ...(Array.isArray(messages) ? messages.map((m:any)=>m.content) : [])].filter(Boolean).join(' ');
+
+        // The model asked a question but gave nothing to tap. Append the options
+        // ourselves as extra tokens: they land in the same message content the
+        // client parses, so the chips appear exactly as if the model had written
+        // them. Tried in order — answers written for this specific question,
+        // then generic ones for the topic — so chips are guaranteed, not hoped for.
+        if (needsOptions(reply)) {
+          const used = countOptionLines(reply);
+          const repaired = await repairOptions(reply);
+          const options = repaired.length
+            ? repaired
+            : QUICK_ANSWERS[detectCategory(convoText)] ?? QUICK_ANSWERS.PERSONAL;
+          send('token', formatOptionLines(options.slice(0, LETTERS.length - used), used));
+        }
+
         send('suggestions', QUICK_ANSWERS[detectCategory(convoText)] ?? QUICK_ANSWERS.PERSONAL);
         send('insight',{label:'LIVE PATH INSIGHT',message:'Your responses are shaping the probability model.'});
         send('done','');
